@@ -1,0 +1,24 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[dev]
+  framework = "#custom"
+  command = "npm run dev"
+  targetPort = 5173
+
+[[plugins]]
+  package = "@netlify/plugin-local-install-core"
+
+[[functions]]
+  path = "netlify/functions"
+  runtime = "nodejs18.x"
+
+[build.environment]
+  NPM_FLAGS = "--prefer-offline"
+  NODE_VERSION = "18"
