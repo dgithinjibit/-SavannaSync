@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  syncsenta-ai-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=production
+      - HEDERA_AI_API_KEY=${HEDERA_AI_API_KEY}
+      - HEDERA_AI_BASE_URL=${HEDERA_AI_BASE_URL:-https://api.moonscape.hedera.com/v1}
+      - JAVA_OPTS=-Xmx512m -Xms256m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/api/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - syncsenta-network
+
+  # Optional: Redis for caching (future enhancement)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - syncsenta-network
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+
+networks:
+  syncsenta-network:
+    driver: bridge
+
+volumes:
+  redis-data:
