@@ -25,7 +25,6 @@ public class HederaAiClientService {
     
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
-    private final String apiKey;
     private final int maxTokens;
     private final double temperature;
     
@@ -37,7 +36,6 @@ public class HederaAiClientService {
             @Value("${hedera.ai.temperature}") double temperature,
             ObjectMapper objectMapper) {
         
-        this.apiKey = apiKey;
         this.maxTokens = maxTokens;
         this.temperature = temperature;
         this.objectMapper = objectMapper;

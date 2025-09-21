@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import * as React from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import * as geminiService from '../../services/geminiService';
+import * as hederaService from '../../services/hederaJavaBackendService';
 import * as dataService from '../../services/dataService';
-import { Chat } from '@google/genai';
 import StudentSetupView from './StudentSetupView';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import StudentProfileModal from './StudentProfileModal';
-import { UserIcon } from '../../components/icons';
+import { UserIcon } from '../../components/Icons';
 
 interface Message {
     role: 'user' | 'model';
@@ -18,19 +17,24 @@ interface StudentSettings {
     currentSubject: string;
 }
 
+interface Chat {
+    sendMessage: (message: string) => Promise<string>;
+    sendMessageStream: (params: { message: string }) => AsyncGenerator<{ text: string }, void, unknown>;
+}
+
 const StudentView: React.FC = () => {
     const { userData } = useAuth();
-    const [settings, setSettings] = useState<StudentSettings | null>(null);
-    const [isSetupVisible, setIsSetupVisible] = useState(false);
-    const [isLoadingSettings, setIsLoadingSettings] = useState(true);
-    const [chat, setChat] = useState<Chat | null>(null);
-    const [messages, setMessages] = useState<Message[]>([]);
-    const [input, setInput] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const [settings, setSettings] = React.useState<StudentSettings | null>(null);
+    const [isSetupVisible, setIsSetupVisible] = React.useState(false);
+    const [isLoadingSettings, setIsLoadingSettings] = React.useState(true);
+    const [chat, setChat] = React.useState<Chat | null>(null);
+    const [messages, setMessages] = React.useState<Message[]>([]);
+    const [input, setInput] = React.useState('');
+    const [isLoading, setIsLoading] = React.useState(false);
+    const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
+    const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
-     useEffect(() => {
+     React.useEffect(() => {
         try {
             const savedSettings = localStorage.getItem('studentLearningSettings');
             if (savedSettings) {
@@ -57,7 +61,7 @@ const StudentView: React.FC = () => {
         }
     };
 
-    useEffect(() => {
+    React.useEffect(() => {
         if (userData && settings) {
             const studentContext = dataService.getStudentContext(userData.schoolId, settings.gradeLevel, settings.currentSubject);
             const teacherId = dataService.getTeacherIdForStudent(userData.uid);
@@ -67,7 +71,28 @@ const StudentView: React.FC = () => {
                 console.log("Teacher customization loaded for student.");
             }
 
-            setChat(geminiService.createTutorChat(studentContext, teacherCustomization || undefined));
+            // Transform context to match Hedera service format
+            const hederaStudentContext = {
+                gradeLevel: studentContext.gradeLevel,
+                currentSubject: studentContext.currentSubject,
+                resourceLevel: studentContext.resourceLevel.toUpperCase() as 'LOW' | 'MEDIUM' | 'HIGH',
+                schoolId: userData.schoolId,
+                teacherCustomization: teacherCustomization || undefined
+            };
+
+            const hederaChat = hederaService.createTutorChat(hederaStudentContext, teacherCustomization || undefined);
+            
+            // Adapt Hedera service to match expected Chat interface
+            const adaptedChat: Chat = {
+                sendMessage: async (message: string) => {
+                    return await hederaChat.sendMessage(message);
+                },
+                sendMessageStream: async function* (params: { message: string }) {
+                    yield* hederaChat.sendMessageStream(params.message);
+                }
+            };
+            
+            setChat(adaptedChat);
             // When settings change, reset the chat with a new welcome message
             setMessages([{ role: 'model', text: `Let's talk about ${settings.currentSubject}! What are you curious about today? 😊` }]);
         }
@@ -77,9 +102,9 @@ const StudentView: React.FC = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
-    useEffect(scrollToBottom, [messages]);
+    React.useEffect(scrollToBottom, [messages]);
 
-    const handleSendMessage = useCallback(async () => {
+    const handleSendMessage = React.useCallback(async () => {
         if (!input.trim() || !chat || isLoading) return;
 
         const userMessage: Message = { role: 'user', text: input };

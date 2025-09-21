@@ -5,7 +5,7 @@ A modern web application designed to enhance Kenya's education system through te
 ## Core Features
 
 - Multi-role system (Students, Teachers, School Heads, County Officers)
-- AI-powered learning assistance with Google's Gemini
+- AI-powered learning assistance with Hedera's decentralized AI infrastructure (Moonscape AI)
 - Real-time data synchronization with Supabase
 - Responsive design with Tailwind CSS
 
@@ -35,7 +35,7 @@ cp .env.example .env
 \`\`\`
 
 4. Add your API keys to `.env`:
-- `VITE_GEMINI_API_KEY` - Your Google Gemini API key
+- `VITE_JAVA_AI_SERVICE_URL` - Your Hedera Java AI service URL
 - `VITE_SUPABASE_URL` - Your Supabase project URL
 - `VITE_SUPABASE_ANON_KEY` - Your Supabase anonymous key
 
@@ -71,8 +71,7 @@ Critical path: Must be 100% complete before any UI work begins.
         "react": "https://esm.sh/react@19.0.0",
         "react-dom": "https://esm.sh/react-dom@19.0.0",
         "recharts": "https://esm.sh/recharts@2.12.7",
-        "supabase": "https://esm.sh/@supabase/supabase-js@2.42.4",
-        "gemini": "https://esm.sh/@google/generative-ai@0.15.0"
+        "supabase": "https://esm.sh/@supabase/supabase-js@2.42.4"
       }
     }
   </script>
@@ -150,25 +149,22 @@ export const dataService = {
 }
 ```
 
-**`geminiService.ts`**
+**`hederaJavaBackendService.ts`**
 ```javascript
 // RULE: ALL PROMPTS MUST INCLUDE CBC CURRICULUM REFERENCES
-export const geminiService = {
-  createTutorChat: (studentContext: ReturnType<typeof dataService.getStudentContext>) => ({
-    systemInstruction: `
-      ROLE: Socratic Tutor for Kenyan CBC Curriculum
-      RULES:
-      1. NEVER provide answers - only guiding questions
-      2. ADAPT to resource_level: 
-         - low: Use storytelling ("Imagine you're dividing mangoes...")
-         - medium: Relatable analogies ("Think of fractions like sharing chapati...")
-         - high: Textbook-aligned methods
-      3. ALWAYS reference CBC code: e.g. "As per CBC Strand 3.2.1..."
-      4. MAX 2 sentences per response
-      CURRENT CONTEXT: Grade ${studentContext.grade_level}, ${studentContext.current_subject}
-    `,
-    stream: (query: string) => /* ... */
+export const hederaService = {{
+  createTutorChat: (studentContext: StudentContext) => ({
+    sendMessage: async (message: string) => {
+      // Calls Hedera Java Backend at /api/tutor/chat
+      // Uses CBC curriculum-aligned prompts
+      // Adapts to resource levels: LOW/MEDIUM/HIGH
+    },
+    sendMessageStream: async function* (message: string) {
+      // Streaming responses from /api/tutor/chat/stream
+      // Real-time AI tutoring via Hedera infrastructure
+    }
   }),
+  },
   
   generateEquityHeatmap: (countyData: any) => ({
     // CRITICAL: Must return EXACTLY this structure
@@ -195,7 +191,7 @@ export const geminiService = {
       CBC REFERENCE: Use EMIS data guidelines section 4.2
     `
   })
-}
+  }
 ```
 
 ### StudentView.tsx
@@ -209,9 +205,7 @@ export const geminiService = {
 export default function StudentView() {
   const { school_id } = useAuth(); // From AuthContext
   const studentContext = dataService.getStudentContext(school_id);
-  const { messages, sendMessage } = useChat(
-    geminiService.createTutorChat(studentContext)
-  );
+  const chat = hederaService.createTutorChat(studentContext);
 
   return (
     <div className="h-screen p-4 bg-white">

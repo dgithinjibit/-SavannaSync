@@ -7,10 +7,11 @@ import AuthPage from './components/AuthPage';
 import LoadingSpinner from './components/LoadingSpinner';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
-import StudentView from './views/student/StudentView';
+import GlobalErrorBoundary from './components/GlobalErrorBoundary';
+import StudentView from './views/students/StudentView';
 import TeacherView from './views/teacher/TeacherView';
 import SchoolHeadView from './views/school_head/SchoolHeadView';
-import CountyOfficerView from './views/county_officer/CountyOfficerView';
+import CountyOfficerView from './views/county_officer/CountyOfficeView';
 import AddSchoolView from './views/county_officer/AddSchoolView';
 import ResetPasswordView from './views/auth/ResetPasswordView';
 

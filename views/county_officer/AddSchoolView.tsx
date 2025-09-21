@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import * as React from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { addSchool } from '../../services/schoolService';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
 const AddSchoolView: React.FC = () => {
     const { userData } = useAuth();
-    const [schoolName, setSchoolName] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [message, setMessage] = useState('');
+    const [schoolName, setSchoolName] = React.useState('');
+    const [loading, setLoading] = React.useState(false);
+    const [error, setError] = React.useState<string | null>(null);
+    const [message, setMessage] = React.useState('');
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

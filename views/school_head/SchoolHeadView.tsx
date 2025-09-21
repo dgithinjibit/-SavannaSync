@@ -1,17 +1,17 @@
 
-import React, { useState } from 'react';
+import * as React from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import * as dataService from '../../services/dataService';
 import DataCard from '../../components/DataCard';
 import LoadingSpinner from '../../components/LoadingSpinner';
-import * as geminiService from '../../services/geminiService';
-import { SchoolIcon, CheckCircleIcon } from '../../components/icons';
+import * as hederaService from '../../services/hederaJavaBackendService';
+import { SchoolIcon, CheckCircleIcon } from '../../components/Icons';
 
 const SchoolHeadView: React.FC = () => {
     const { userData } = useAuth();
-    const [aiQuery, setAiQuery] = useState('');
-    const [aiResponse, setAiResponse] = useState('');
-    const [isLoadingAi, setIsLoadingAi] = useState(false);
+    const [aiQuery, setAiQuery] = React.useState('');
+    const [aiResponse, setAiResponse] = React.useState('');
+    const [isLoadingAi, setIsLoadingAi] = React.useState(false);
 
     if (!userData) return <LoadingSpinner fullScreen />;
 
@@ -22,7 +22,7 @@ const SchoolHeadView: React.FC = () => {
         setIsLoadingAi(true);
         setAiResponse('');
         try {
-            const response = await geminiService.getSchoolHeadAnalysis(aiQuery, dashboardData);
+            const response = await hederaService.getSchoolHeadAnalysis(aiQuery, dashboardData);
             setAiResponse(response);
         } catch (error) {
             console.error(error);

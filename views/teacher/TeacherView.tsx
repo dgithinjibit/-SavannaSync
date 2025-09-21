@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import * as dataService from '../../services/dataService';
 import DataCard from '../../components/DataCard';
-import { SchoolIcon, CheckCircleIcon, ArrowUpIcon } from '../../components/icons';
+import { SchoolIcon, CheckCircleIcon, ArrowUpIcon } from '../../components/Icons';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
@@ -19,12 +19,12 @@ interface StudentRegisterProps {
   onBack: () => void;
 }
 
-const StudentRegister: React.FC<StudentRegisterProps> = ({ classId, onBack }) => {
+const StudentRegister = ({ classId, onBack }: StudentRegisterProps) => {
     const storageKey = `attendance_${classId}`;
-    const [students, setStudents] = useState<Student[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [students, setStudents] = React.useState<Student[]>([]);
+    const [loading, setLoading] = React.useState(true);
 
-    useEffect(() => {
+    React.useEffect(() => {
         setLoading(true);
         const initialStudents = dataService.getStudentRegister(classId);
         try {
@@ -47,7 +47,7 @@ const StudentRegister: React.FC<StudentRegisterProps> = ({ classId, onBack }) =>
     }, [classId, storageKey]);
 
     const toggleAttendance = (studentId: string, session: 'morning' | 'evening') => {
-        setStudents(prevStudents => {
+        setStudents((prevStudents: any[]) => {
             const newStudents = prevStudents.map(s =>
                 s.id === studentId
                 ? { ...s, attendance: { ...s.attendance, [session]: !s.attendance[session] } }
@@ -82,7 +82,7 @@ const StudentRegister: React.FC<StudentRegisterProps> = ({ classId, onBack }) =>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {students.map(student => (
+                        {students.map((student: Student) => (
                             <tr key={student.id}>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-text-primary">{student.name}</td>
                                 <td className="px-6 py-4 text-center">
@@ -100,9 +100,9 @@ const StudentRegister: React.FC<StudentRegisterProps> = ({ classId, onBack }) =>
     );
 };
 
-const MyClassesView: React.FC = () => {
+const MyClassesView = () => {
     const { userData } = useAuth();
-    const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+    const [selectedClassId, setSelectedClassId] = React.useState<string | null>(null);
 
     if (!userData) return null;
 
@@ -124,7 +124,7 @@ const MyClassesView: React.FC = () => {
     );
 };
 
-const TeacherDashboard: React.FC = () => {
+const TeacherDashboard = () => {
     const { userData } = useAuth();
     if (!userData) return <LoadingSpinner />;
 
@@ -162,15 +162,15 @@ const TeacherDashboard: React.FC = () => {
     );
 };
 
-const AiCustomizationView: React.FC = () => {
+const AiCustomizationView = () => {
     const { userData } = useAuth();
     // A teacher sets customizations for students who are linked to them.
     // In our mock setup, a student is linked to a "teacher" with the same UID.
     const storageKey = `teacher_ai_customization_${userData?.uid}`;
-    const [customInstruction, setCustomInstruction] = useState('');
-    const [saved, setSaved] = useState(false);
+    const [customInstruction, setCustomInstruction] = React.useState('');
+    const [saved, setSaved] = React.useState(false);
 
-    useEffect(() => {
+    React.useEffect(() => {
         const savedInstruction = localStorage.getItem(storageKey);
         if (savedInstruction) {
             setCustomInstruction(savedInstruction);
@@ -215,8 +215,8 @@ const AiCustomizationView: React.FC = () => {
 
 // --- Main Teacher View Component ---
 
-const TeacherView: React.FC<{ initialView?: string }> = ({ initialView = 'Dashboard' }) => {
-    const [activeTab, setActiveTab] = useState(initialView);
+const TeacherView = ({ initialView = 'Dashboard' }: { initialView?: string }) => {
+    const [activeTab, setActiveTab] = React.useState(initialView);
 
     const tabs = ['Dashboard', 'My Hub', 'AI Tuner'];
 
