@@ -1,15 +1,14 @@
-
-import React from 'react';
-import { ArrowUpIcon, ArrowDownIcon } from './icons';
+import * as React from 'react';
+import { ArrowUpIcon, ArrowDownIcon } from './Icons';
 
 interface DataCardProps {
-    icon: React.ReactNode;
-    title: string;
-    value: string;
-    change?: number;
+  icon: React.ReactNode;
+  title: string;
+  value: string;
+  change?: number;
 }
 
-const DataCard: React.FC<DataCardProps> = ({ icon, title, value, change }) => {
+const DataCard = ({ icon, title, value, change }: DataCardProps) => {
     const isPositive = change !== undefined && change >= 0;
     
     return (

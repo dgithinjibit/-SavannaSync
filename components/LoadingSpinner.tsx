@@ -1,5 +1,5 @@
 
-import React from 'react';
+import * as React from 'react';
 
 const LoadingSpinner: React.FC<{ fullScreen?: boolean }> = ({ fullScreen = false }) => {
     const wrapperClasses = fullScreen

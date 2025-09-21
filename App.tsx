@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './hooks/useAuth';
 import { UserRole } from './types';
@@ -16,10 +16,10 @@ import ResetPasswordView from './views/auth/ResetPasswordView';
 
 const AppContent: React.FC = () => {
     const { userData, loading } = useAuth();
-    const [activeView, setActiveView] = useState('');
-    const [isResetFlow, setIsResetFlow] = useState(false);
+    const [activeView, setActiveView] = React.useState('');
+    const [isResetFlow, setIsResetFlow] = React.useState(false);
 
-    useEffect(() => {
+    React.useEffect(() => {
         // Hash routing for password reset
         const handleHashChange = () => {
             const hash = window.location.hash;
@@ -37,7 +37,7 @@ const AppContent: React.FC = () => {
         };
     }, []);
 
-    useEffect(() => {
+    React.useEffect(() => {
         if (userData) {
             // Set default view when user logs in or role changes
             switch (userData.role) {

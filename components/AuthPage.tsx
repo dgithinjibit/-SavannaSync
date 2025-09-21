@@ -1,6 +1,6 @@
 
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import * as React from 'react';
 import * as authService from '../services/authService';
 import { useAuth } from '../hooks/useAuth';
 import { UserRole, School } from '../types';
@@ -9,13 +9,13 @@ import { getAllSchools, addSchool } from '../services/schoolService';
 import LoadingSpinner from './LoadingSpinner';
 
 const ForgotPasswordForm: React.FC<{ onBack: () => void }> = ({ onBack }) => {
-    const [resetTab, setResetTab] = useState<'staff' | 'student'>('staff');
-    const [email, setEmail] = useState('');
-    const [studentCode, setStudentCode] = useState('');
-    const [newPassword, setNewPassword] = useState('');
-    const [error, setError] = useState<string | null>(null);
-    const [message, setMessage] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [resetTab, setResetTab] = React.useState<'staff' | 'student'>('staff');
+    const [email, setEmail] = React.useState('');
+    const [studentCode, setStudentCode] = React.useState('');
+    const [newPassword, setNewPassword] = React.useState('');
+    const [error, setError] = React.useState<string | null>(null);
+    const [message, setMessage] = React.useState('');
+    const [loading, setLoading] = React.useState(false);
 
     const handleStaffReset = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -98,25 +98,25 @@ const ForgotPasswordForm: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 };
 
 const AuthPage: React.FC = () => {
-    const [view, setView] = useState<'signIn' | 'signUp' | 'forgotPassword'>('signIn');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [role, setRole] = useState<UserRole>(UserRole.TEACHER);
-    const [county, setCounty] = useState(KENYAN_COUNTIES[0]);
+    const [view, setView] = React.useState<'signIn' | 'signUp' | 'forgotPassword'>('signIn');
+    const [email, setEmail] = React.useState('');
+    const [password, setPassword] = React.useState('');
+    const [role, setRole] = React.useState<UserRole>(UserRole.TEACHER);
+    const [county, setCounty] = React.useState(KENYAN_COUNTIES[0]);
     
-    const [schoolId, setSchoolId] = useState<string | null>(null);
-    const [schoolSearchText, setSchoolSearchText] = useState('');
-    const [isSchoolDropdownOpen, setIsSchoolDropdownOpen] = useState(false);
-    const schoolInputRef = useRef<HTMLDivElement>(null);
+    const [schoolId, setSchoolId] = React.useState<string | null>(null);
+    const [schoolSearchText, setSchoolSearchText] = React.useState('');
+    const [isSchoolDropdownOpen, setIsSchoolDropdownOpen] = React.useState(false);
+    const schoolInputRef = React.useRef<HTMLDivElement>(null);
 
-    const [schools, setSchools] = useState<School[]>([]);
-    const [error, setError] = useState<string | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState('');
+    const [schools, setSchools] = React.useState<School[]>([]);
+    const [error, setError] = React.useState<string | null>(null);
+    const [loading, setLoading] = React.useState(false);
+    const [message, setMessage] = React.useState('');
 
     const { signIn, signUp, signInWithGoogle, signInWithWallet } = useAuth();
 
-    const fetchSchools = useCallback(async () => {
+    const fetchSchools = React.useCallback(async () => {
         setLoading(true);
         try {
             const allSchools = await getAllSchools();
@@ -128,11 +128,11 @@ const AuthPage: React.FC = () => {
         }
     }, []);
 
-    useEffect(() => {
+    React.useEffect(() => {
         fetchSchools();
     }, [fetchSchools]);
 
-    useEffect(() => {
+    React.useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (schoolInputRef.current && !schoolInputRef.current.contains(event.target as Node)) {
                 setIsSchoolDropdownOpen(false);
@@ -190,14 +190,14 @@ const AuthPage: React.FC = () => {
         }
     };
 
-    const schoolsInCounty = useMemo(() => schools.filter(s => s.county === county), [schools, county]);
+    const schoolsInCounty = React.useMemo(() => schools.filter(s => s.county === county), [schools, county]);
     
-    const searchedSchools = useMemo(() => {
+    const searchedSchools = React.useMemo(() => {
         if (!schoolSearchText) return schoolsInCounty;
         return schoolsInCounty.filter(s => s.name.toLowerCase().includes(schoolSearchText.toLowerCase()));
     }, [schoolSearchText, schoolsInCounty]);
 
-    const showAddSchoolOption = useMemo(() => {
+    const showAddSchoolOption = React.useMemo(() => {
         if (!schoolSearchText) return false;
         const exactMatch = schoolsInCounty.some(s => s.name.toLowerCase() === schoolSearchText.toLowerCase());
         return !exactMatch;

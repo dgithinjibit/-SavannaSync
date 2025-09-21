@@ -1,7 +1,7 @@
-import React from 'react';
+import * as React from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { UserRole } from '../types';
-import { DashboardIcon, ClassesIcon, AiAssistantIcon, ResourcesIcon, SchoolIcon } from './icons';
+import { DashboardIcon, ClassesIcon, AiAssistantIcon, ResourcesIcon, SchoolIcon } from './Icons';
 
 interface NavItem {
     label: string;
