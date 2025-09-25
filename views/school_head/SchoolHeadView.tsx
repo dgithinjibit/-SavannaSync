@@ -37,7 +37,6 @@ const SchoolHeadView: React.FC = () => {
     // --- Construct minimal payload ---
     const minimalPayload = {
         schoolId: userData.schoolId,
-        // If you have termId in the user/session, include it; otherwise, null or placeholder
         termId: userData.termId || null,
         requiredAggregates: {
             complianceStatus: dashboardData.kpis.find(kpi => kpi.title === "Compliance Status")?.value,

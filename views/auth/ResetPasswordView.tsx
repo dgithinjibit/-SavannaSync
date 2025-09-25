@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import * as React from 'react';
 import * as authService from '../../services/authService';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
 const ResetPasswordView: React.FC = () => {
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [error, setError] = useState<string | null>(null);
-    const [message, setMessage] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [password, setPassword] = React.useState('');
+    const [confirmPassword, setConfirmPassword] = React.useState('');
+    const [error, setError] = React.useState<string | null>(null);
+    const [message, setMessage] = React.useState('');
+    const [loading, setLoading] = React.useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

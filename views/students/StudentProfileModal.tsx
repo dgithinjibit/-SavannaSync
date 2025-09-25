@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import * as React from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { UserIcon } from '../../components/icons';
+import { UserIcon } from '../../components/Icons';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
 interface StudentProfileModalProps {
@@ -10,15 +10,15 @@ interface StudentProfileModalProps {
 
 const StudentProfileModal: React.FC<StudentProfileModalProps> = ({ isOpen, onClose }) => {
     const { userData, signOut, uploadProfilePhoto, updateUserMetadata } = useAuth();
-    const [fullName, setFullName] = useState(userData?.fullName || userData?.email?.split('@')[0] || '');
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [previewUrl, setPreviewUrl] = useState<string | null>(userData?.avatarUrl || null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [message, setMessage] = useState('');
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [fullName, setFullName] = React.useState(userData?.fullName || userData?.email?.split('@')[0] || '');
+    const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = React.useState<string | null>(userData?.avatarUrl || null);
+    const [loading, setLoading] = React.useState(false);
+    const [error, setError] = React.useState('');
+    const [message, setMessage] = React.useState('');
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-    useEffect(() => {
+    React.useEffect(() => {
         setFullName(userData?.fullName || userData?.email?.split('@')[0] || '');
         setPreviewUrl(userData?.avatarUrl || null);
         setError('');

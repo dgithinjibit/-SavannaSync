@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import * as React from 'react';
 
 interface StudentSetupViewProps {
     onSave: (grade: number, subject: string) => void;
@@ -8,8 +8,8 @@ const subjects = ['Mathematics', 'English', 'Science', 'Swahili', 'Social Studie
 const grades = Array.from({ length: 8 }, (_, i) => i + 1); // Grades 1 to 8
 
 const StudentSetupView: React.FC<StudentSetupViewProps> = ({ onSave }) => {
-    const [selectedGrade, setSelectedGrade] = useState<number>(4);
-    const [selectedSubject, setSelectedSubject] = useState<string>(subjects[0]);
+    const [selectedGrade, setSelectedGrade] = React.useState<number>(4);
+    const [selectedSubject, setSelectedSubject] = React.useState<string>(subjects[0]);
 
     const handleSubmit = () => {
         onSave(selectedGrade, selectedSubject);
