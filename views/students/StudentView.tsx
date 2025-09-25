@@ -88,7 +88,9 @@ const StudentView: React.FC = () => {
                     return await hederaChat.sendMessage(message);
                 },
                 sendMessageStream: async function* (params: { message: string }) {
-                    yield* hederaChat.sendMessageStream(params.message);
+                    for await (const chunk of hederaChat.sendMessageStream(params.message)) {
+                        yield typeof chunk === 'string' ? { text: chunk } : chunk;
+                    }
                 }
             };
             
