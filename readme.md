@@ -5,8 +5,8 @@ A modern web application designed to enhance Kenya's education system through te
 ## Core Features
 
 - Multi-role system (Students, Teachers, School Heads, County Officers)
-- AI-powered learning assistance with Google's Gemini
-- Real-time data synchronization with Supabase
+- AI-powered learning assistance with Hedera AI Studio.
+- Real-time data synchronization with HCS
 - Responsive design with Tailwind CSS
 
 ## Development Requirements
