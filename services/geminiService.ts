@@ -1,9 +1,3 @@
-import { GoogleGenAI, Type, Chat } from '@google/genai';
-import { UserData } from '../types';
-
-let ai: GoogleGenAI | null = null;
-
-// This is a local type for the student context data.
 interface StudentContext {
     resourceLevel: 'low' | 'medium' | 'high';
     currentSubject: string;
@@ -17,34 +11,40 @@ class AIServiceError extends Error {
     }
 }
 
-const getClient = (): GoogleGenAI => {
-    if (!ai) {
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-        if (!apiKey) {
-            throw new AIServiceError(
-                "API key not configured. Please set VITE_GEMINI_API_KEY in your environment variables.",
-                "CONFIG_ERROR"
-            );
-        }
-        try {
-            ai = new GoogleGenAI({ apiKey });
-        } catch (error) {
-            throw new AIServiceError(
-                "Failed to initialize AI client: " + (error instanceof Error ? error.message : String(error)),
-                "INIT_ERROR"
-            );
-        }
+const getServiceUrl = (): string => {
+    const serviceUrl = import.meta.env.VITE_JAVA_AI_SERVICE_URL;
+    if (!serviceUrl) {
+        throw new AIServiceError(
+            "AI service URL not configured. Please set VITE_JAVA_AI_SERVICE_URL in your environment variables.",
+            "CONFIG_ERROR"
+        );
     }
-    return ai;
+    return serviceUrl;
+};
+
+const postToAIService = async (endpoint: string, body: any) => {
+    const serviceUrl = getServiceUrl();
+    const response = await fetch(`${serviceUrl}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+        throw new AIServiceError(
+            `AI Service request failed: ${response.statusText}`,
+            "REQUEST_ERROR"
+        );
+    }
+    return response.json();
 };
 
 // --- Student: Mwalimu AI Tutor ---
-export const createTutorChat = (studentContext: StudentContext, teacherCustomization?: string): Chat => {
-    const client = getClient();
+export const createTutorChat = async (
+    studentContext: StudentContext,
+    teacherCustomization?: string
+): Promise<any> => {
     const isLowResource = studentContext.resourceLevel === 'low';
-    
     if (isLowResource) {
-        // Verification log as per specification
         console.log("ADAPT: low-resource mode activated for student tutor.");
     }
 
@@ -69,29 +69,32 @@ ${teacherCustomization}
 ---
 ` : ''}
 `;
-    
-    return client.chats.create({
-        model: 'gemini-2.5-flash',
-        config: { systemInstruction },
+
+    return postToAIService('/tutor/chat', {
+        systemInstruction,
+        studentContext,
+        teacherCustomization,
     });
 };
 
 // --- Teacher: AI Assistant ---
-export const getTeacherAssistantResponse = async (prompt: string, history: { role: 'user' | 'model', parts: { text: string }[] }[]) => {
-    const client = getClient();
-    const chat = client.chats.create({
-        model: 'gemini-2.5-flash',
+export const getTeacherAssistantResponse = async (
+    prompt: string,
+    history: { role: 'user' | 'model'; parts: { text: string }[] }[]
+): Promise<any> => {
+    return postToAIService('/teacher/assistant', {
+        prompt,
         history,
-        config: {
-            systemInstruction: "You are a creative and highly-efficient AI assistant for a busy Kenyan teacher. Help with generating lesson plans, creating quiz questions, drafting parent communications, and providing creative ideas for CBC activities. Your tone should be professional, supportive, and practical."
-        }
+        systemInstruction:
+            "You are a creative and highly-efficient AI assistant for a busy Kenyan teacher. Help with generating lesson plans, creating quiz questions, drafting parent communications, and providing creative ideas for CBC activities. Your tone should be professional, supportive, and practical.",
     });
-    return chat.sendMessageStream({ message: prompt });
 };
 
 // --- School Head: AI Operational Consultant ---
-export const getSchoolHeadAnalysis = async (prompt: string, schoolData: any) => {
-    const client = getClient();
+export const getSchoolHeadAnalysis = async (
+    prompt: string,
+    schoolData: any
+): Promise<any> => {
     const fullPrompt = `
       School Data Context:
       - KPIs: ${JSON.stringify(schoolData.kpis)}
@@ -100,21 +103,18 @@ export const getSchoolHeadAnalysis = async (prompt: string, schoolData: any) => 
       User's Question:
       ${prompt}
     `;
-
-    const response = await client.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: fullPrompt,
-        config: {
-            systemInstruction: "You are an AI operational consultant for a Kenyan school head. Analyze the provided school data to answer the user's questions. Connect operational data (e.g., high student-teacher ratio) to potential learning impacts (e.g., low engagement in math) and suggest practical, actionable solutions."
-        }
+    return postToAIService('/school-head/analysis', {
+        fullPrompt,
+        systemInstruction:
+            "You are an AI operational consultant for a Kenyan school head. Analyze the provided school data to answer the user's questions. Connect operational data (e.g., high student-teacher ratio) to potential learning impacts (e.g., low engagement in math) and suggest practical, actionable solutions.",
     });
-
-    return response.text;
 };
 
 // --- County Officer: AI Strategic Advisor ---
-export const getCountyOfficerReport = async (prompt: string, countyData: any) => {
-    const client = getClient();
+export const getCountyOfficerReport = async (
+    prompt: string,
+    countyData: any
+): Promise<any> => {
     const fullPrompt = `
       County-Wide Data Context:
       - KPIs: ${JSON.stringify(countyData.kpis)}
@@ -123,66 +123,29 @@ export const getCountyOfficerReport = async (prompt: string, countyData: any) =>
       User's Request:
       ${prompt}
     `;
-
-    const response = await client.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: fullPrompt,
-        config: {
-            systemInstruction: "You are an AI data analyst and strategic advisor for a Kenyan County Education Officer. Provide concise, data-driven, and actionable recommendations based on the provided county-wide data. Your insights should help in strategic planning and resource allocation."
-        }
+    return postToAIService('/county-officer/report', {
+        fullPrompt,
+        systemInstruction:
+            "You are an AI data analyst and strategic advisor for a Kenyan County Education Officer. Provide concise, data-driven, and actionable recommendations based on the provided county-wide data. Your insights should help in strategic planning and resource allocation.",
     });
-
-    return response.text;
 };
 
 // --- County Officer: AI Equity Heatmap ---
-export const getEquityAnalysis = async (county: string) => {
-    const client = getClient();
+export const getEquityAnalysis = async (county: string): Promise<any> => {
     const prompt = `
       Analyze the correlation between resource levels and student scores for schools in ${county} County, Kenya. Group the analysis into fictional wards.
       OUTPUT FORMAT: JSON matching the provided schema. NO EXTRA TEXT OR EXPLANATIONS.
       CBC REFERENCE: Use EMIS data guidelines section 4.2
     `;
-
-    const response = await client.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-            responseMimeType: "application/json",
-            responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                    heatmap: {
-                        type: Type.ARRAY,
-                        items: {
-                            type: Type.OBJECT,
-                            properties: {
-                                ward: { type: Type.STRING },
-                                resource_level: { 
-                                    type: Type.STRING,
-                                    description: "One of 'low', 'medium', or 'high'"
-                                },
-                                avg_score: { 
-                                    type: Type.INTEGER,
-                                    description: "An integer between 0 and 100"
-                                },
-                                correlation: { 
-                                    type: Type.STRING,
-                                    description: "One of 'strong', 'moderate', or 'weak'"
-                                }
-                            },
-                            required: ["ward", "resource_level", "avg_score", "correlation"]
-                        }
-                    }
-                }
-            }
-        }
+    const response = await postToAIService('/county-officer/equity-heatmap', {
+        prompt,
+        responseMimeType: "application/json",
     });
 
     try {
-        return JSON.parse(response.text);
+        return typeof response === "string" ? JSON.parse(response) : response;
     } catch (e) {
-        console.error("Failed to parse JSON from Gemini:", e, "Raw response:", response.text);
+        console.error("Failed to parse JSON from AI Service:", e, "Raw response:", response);
         throw new Error("AI response was not valid JSON.");
     }
 };
