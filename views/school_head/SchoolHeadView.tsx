@@ -1,11 +1,13 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import * as dataService from '../../services/dataService';
 import DataCard from '../../components/DataCard';
 import LoadingSpinner from '../../components/LoadingSpinner';
-import * as geminiService from '../../services/geminiService';
+// Named import from hederaJavaBackendService
+import { getSchoolHeadAnalysis } from '../../services/hederaJavaBackendService';
 import { SchoolIcon, CheckCircleIcon } from '../../components/icons';
+
+const AI_REQUEST_TIMEOUT_MS = 30000; // 30 seconds, adjust as needed
 
 const SchoolHeadView: React.FC = () => {
     const { userData } = useAuth();
@@ -13,22 +15,64 @@ const SchoolHeadView: React.FC = () => {
     const [aiResponse, setAiResponse] = useState('');
     const [isLoadingAi, setIsLoadingAi] = useState(false);
 
+    // Track the current AbortController for cancellation/timeout
+    const abortControllerRef = useRef<AbortController | null>(null);
+    const timeoutRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        // Cleanup on component unmount
+        return () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+        };
+    }, []);
+
     if (!userData) return <LoadingSpinner fullScreen />;
 
     const dashboardData = dataService.getSchoolHeadDashboardData(userData.schoolId);
 
     const handleAiQuery = async () => {
         if (!aiQuery.trim()) return;
+
+        // Cancel any previous request
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+        }
+
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
+        // Set up per-request timeout
+        timeoutRef.current = window.setTimeout(() => {
+            controller.abort();
+        }, AI_REQUEST_TIMEOUT_MS);
+
         setIsLoadingAi(true);
         setAiResponse('');
         try {
-            const response = await geminiService.getSchoolHeadAnalysis(aiQuery, dashboardData);
+            // Pass controller.signal to service call
+            const response = await getSchoolHeadAnalysis(aiQuery, dashboardData, { signal: controller.signal });
             setAiResponse(response);
-        } catch (error) {
-            console.error(error);
-            setAiResponse("Sorry, I couldn't process that request. Please try again.");
+        } catch (error: any) {
+            if (error.name === 'AbortError') {
+                setAiResponse("Request was cancelled or timed out.");
+            } else {
+                console.error(error);
+                setAiResponse("Sorry, I couldn't process that request. Please try again.");
+            }
         } finally {
             setIsLoadingAi(false);
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+                timeoutRef.current = null;
+            }
         }
     };
 
