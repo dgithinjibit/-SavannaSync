@@ -30,7 +30,7 @@ const StudentView: React.FC = () => {
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-     useEffect(() => {
+    useEffect(() => {
         try {
             const savedSettings = localStorage.getItem('studentLearningSettings');
             if (savedSettings) {
@@ -88,7 +88,8 @@ const StudentView: React.FC = () => {
         setIsLoading(true);
 
         try {
-            const stream = await chat.sendMessageStream({ message: input });
+            // FIX 1: Remove await for sendMessageStream
+            const stream = chat.sendMessageStream({ message: input });
             
             let modelResponse = '';
             setMessages(prev => [...prev, { role: 'model', text: '' }]);
@@ -126,7 +127,7 @@ const StudentView: React.FC = () => {
             <div className="flex flex-col h-screen bg-white">
                 <header className="bg-surface shadow-sm p-4 flex justify-between items-center z-10">
                     <div className="flex items-center space-x-2">
-                         <button 
+                        <button 
                             onClick={() => setIsSetupVisible(true)} 
                             className="p-2 rounded-md hover:bg-gray-100 transition"
                             aria-label="Change grade or subject"
@@ -141,7 +142,7 @@ const StudentView: React.FC = () => {
                             <p className="text-sm text-text-secondary">{`Grade ${settings.gradeLevel} | ${settings.currentSubject}`}</p>
                         </div>
                     </div>
-                     <button onClick={() => setIsProfileModalOpen(true)} className="rounded-full w-10 h-10 flex items-center justify-center bg-gray-200 hover:bg-gray-300 transition">
+                    <button onClick={() => setIsProfileModalOpen(true)} className="rounded-full w-10 h-10 flex items-center justify-center bg-gray-200 hover:bg-gray-300 transition">
                         {userData?.avatarUrl ? (
                             <img src={userData.avatarUrl} alt={userData.fullName || 'Student profile picture'} className="w-10 h-10 rounded-full object-cover" />
                         ) : (
@@ -158,16 +159,17 @@ const StudentView: React.FC = () => {
                             </div>
                         </div>
                     ))}
-                    {isLoading && messages[messages.length-1].role === 'user' && (
-                         <div className="flex justify-start">
-                             <div className="p-3 rounded-lg bg-gray-100">
-                                 <div className="flex items-center space-x-2">
+                    {/* FIX 2: Guard against empty messages before indexing */}
+                    {isLoading && messages.length > 0 && messages[messages.length - 1].role === 'user' && (
+                        <div className="flex justify-start">
+                            <div className="p-3 rounded-lg bg-gray-100">
+                                <div className="flex items-center space-x-2">
                                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
                                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-75"></div>
                                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-150"></div>
-                                 </div>
-                             </div>
-                         </div>
+                                </div>
+                            </div>
+                        </div>
                     )}
                     <div ref={messagesEndRef} />
                 </main>
@@ -183,7 +185,7 @@ const StudentView: React.FC = () => {
                             className="flex-1 p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
                             disabled={isLoading}
                         />
-                        <button onClick={handleSendMessage} disabled={isLoading || !input.trim()} className="bg-primary text-white p-3 rounded-lg font-semibold hover:bg-green-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed">
+                        <button onClick={handleSendMessage} disabled={isLoading || !input.trim()} className="bg-primary text-white p-3 rounded-lg font-semibold hover:bg-green-700 transition">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
                             </svg>
