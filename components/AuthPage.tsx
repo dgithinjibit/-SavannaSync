@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import * as authService from '../services/authService';
 import { useAuth } from '../hooks/useAuth';
@@ -7,12 +5,14 @@ import { UserRole, School } from '../types';
 import { KENYAN_COUNTIES } from '../constants';
 import { getAllSchools, addSchool } from '../services/schoolService';
 import LoadingSpinner from './LoadingSpinner';
+import { Link } from 'react-router-dom';
 
 const ForgotPasswordForm: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [resetTab, setResetTab] = useState<'staff' | 'student'>('staff');
     const [email, setEmail] = useState('');
     const [studentCode, setStudentCode] = useState('');
     const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
@@ -25,8 +25,9 @@ const ForgotPasswordForm: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         try {
             await authService.sendPasswordResetEmail(email);
             setMessage('Password reset link sent! Please check your email.');
-        } catch (err: any) {
-            setError(err.message || 'Failed to send reset link.');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Failed to send reset link.';
+            setError(message);
         } finally {
             setLoading(false);
         }
@@ -37,11 +38,17 @@ const ForgotPasswordForm: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         setLoading(true);
         setError(null);
         setMessage('');
+        if (newPassword !== confirmPassword) {
+            setError("Passwords don't match.");
+            setLoading(false);
+            return;
+        }
         try {
             await authService.resetStudentPassword(email, studentCode, newPassword);
             setMessage('Password has been reset successfully! You can now sign in.');
-        } catch (err: any) {
-            setError(err.message || 'Failed to reset password.');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Failed to reset password.';
+            setError(message);
         } finally {
             setLoading(false);
         }
@@ -84,7 +91,8 @@ const ForgotPasswordForm: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 <form className="space-y-4" onSubmit={handleStudentReset}>
                     <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Your Email Address" required className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary" />
                     <input type="text" value={studentCode} onChange={e => setStudentCode(e.target.value)} placeholder="Student Reset Code" required className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary" />
-                    <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="New Password" required className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary" />
+                    <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="New Password" required minLength={12} autoComplete="new-password" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary" />
+                    <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Confirm New Password" required minLength={12} autoComplete="new-password" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary" />
                     <button type="submit" disabled={loading} className="w-full py-3 bg-primary text-white rounded-lg font-semibold hover:bg-green-700 transition flex items-center justify-center">
                         {loading ? <LoadingSpinner /> : 'Reset Password'}
                     </button>
@@ -121,8 +129,9 @@ const AuthPage: React.FC = () => {
         try {
             const allSchools = await getAllSchools();
             setSchools(allSchools);
-        } catch (err: any) {
-            setError('Failed to load schools. Please try again.');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Failed to load schools. Please try again.';
+            setError(message);
         } finally {
             setLoading(false);
         }
@@ -156,8 +165,9 @@ const AuthPage: React.FC = () => {
             await fetchSchools();
             setSchoolId(newSchool.id);
             setSchoolSearchText(newSchool.name);
-        } catch (err: any) {
-            setError(err.message || 'Failed to add new school.');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Failed to add new school.';
+            setError(message);
         } finally {
             setLoading(false);
         }
@@ -176,15 +186,15 @@ const AuthPage: React.FC = () => {
                     setLoading(false);
                     return;
                 }
-                const finalSchoolId = role === UserRole.COUNTY_OFFICER ? county : schoolId!;
+                const finalSchoolId = role === UserRole.COUNTY_OFFICER ? '' : schoolId!;
                 await signUp(email, password, role, finalSchoolId, county);
                 setMessage('Sign up successful! Please check your email to verify your account.');
             } else {
                 await signIn(email, password);
             }
-// FIX: The catch block was syntactically incorrect, causing numerous parsing errors. It has been corrected to properly handle errors.
-        } catch (err: any) {
-            setError(err.message || `Failed to ${view === 'signUp' ? 'sign up' : 'sign in'}.`);
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : `Failed to ${view === 'signUp' ? 'sign up' : 'sign in'}.`;
+            setError(message);
         } finally {
             setLoading(false);
         }
@@ -244,7 +254,16 @@ const AuthPage: React.FC = () => {
                         <form className="space-y-4" onSubmit={handleSubmit}>
                             <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email Address" required className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary" />
                             <div>
-                                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" required className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary" />
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={e => setPassword(e.target.value)}
+                                    placeholder="Password"
+                                    required
+                                    minLength={12}
+                                    autoComplete="new-password"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
+                                />
                                 {view === 'signIn' && (
                                      <button type="button" onClick={() => setView('forgotPassword')} className="text-xs text-primary hover:underline text-right w-full mt-1">Forgot Password?</button>
                                 )}
@@ -264,7 +283,10 @@ const AuthPage: React.FC = () => {
                                         }}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
                                     >
-                                        {Object.values(UserRole).filter(r => ![UserRole.PARENT, UserRole.MINISTRY_OFFICIAL].includes(r)).map(r => <option key={r} value={r}>{r.replace('_', ' ')}</option>)}
+                                        {Object.values(UserRole)
+                                            .filter(v => typeof v === 'string')
+                                            .filter(r => !['PARENT', 'MINISTRY_OFFICIAL'].includes(r as string))
+                                            .map(r => <option key={r as string} value={r as string}>{(r as string).replace('_', ' ')}</option>)}
                                     </select>
                                     <select 
                                         value={county} 
@@ -336,10 +358,10 @@ const AuthPage: React.FC = () => {
 
                         <div className="grid grid-cols-2 gap-4">
                              <button onClick={signInWithGoogle} className="w-full flex items-center justify-center py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
-                               Google
+                                Google
                             </button>
                              <button onClick={signInWithWallet} className="w-full flex items-center justify-center py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
-                               Wallet
+                                Wallet
                             </button>
                         </div>
                     </>
