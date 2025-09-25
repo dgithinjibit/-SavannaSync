@@ -10,7 +10,7 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react",
-    "types": ["vite/client"],
+    "types": ["vite/client", "react", "react-dom"],
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
