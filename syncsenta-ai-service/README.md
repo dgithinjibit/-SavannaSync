@@ -1,6 +1,6 @@
 # SyncSenta AI Service
 
-A Java Spring Boot microservice that provides AI-powered educational assistance using **Hedera Moonscape AI Agent** for the Kenya Education Ecosystem.
+A Java Spring Boot microservice that provides AI-powered educational assistance using **Hedera Testnet Moonscape AI Agent** for the Kenya Education Ecosystem.
 
 ## 🏗️ Architecture
 
@@ -16,10 +16,25 @@ This microservice replaces Google Gemini with Hedera's decentralized AI infrastr
 ### Prerequisites
 - Java 21+
 - Maven 3.8+
-- Hedera Moonscape AI API credentials
+- Hedera testnet account and credentials
+- Hedera Moonscape AI API key (testnet)
 
-### Environment Setup
+### Testnet Environment Setup
 
+#### Option 1: Using Environment Variables
+```bash
+# Set your Hedera testnet credentials
+export HEDERA_ACCOUNT_ID="0.0.YOUR_TESTNET_ACCOUNT_ID"
+export HEDERA_PRIVATE_KEY="your_testnet_private_key_here"
+export HEDERA_AI_API_KEY="your_moonscape_ai_testnet_key_here"
+
+# Testnet configuration (usually don't change these)
+export HEDERA_AI_BASE_URL="https://api.testnet.moonscape.hedera.com/v1"
+export HEDERA_NETWORK="testnet"
+export SPRING_PROFILES_ACTIVE="testnet"
+```
+
+#### Option 2: Using the Setup Script
 ```bash
 # Set environment variables
 export HEDERA_AI_API_KEY=your_hedera_ai_api_key_here

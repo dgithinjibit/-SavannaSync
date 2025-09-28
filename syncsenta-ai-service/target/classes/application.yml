@@ -7,16 +7,26 @@ spring:
   application:
     name: syncsenta-ai-service
   profiles:
-    active: development
+    active: testnet
 
-# Hedera Moonscape AI Configuration
+# Hedera Testnet Configuration
 hedera:
   ai:
-    base-url: ${HEDERA_AI_BASE_URL:https://api.moonscape.hedera.com/v1}
-    api-key: ${HEDERA_AI_API_KEY:your_hedera_ai_api_key_here}
+    # Hedera Testnet Moonscape AI endpoint
+    base-url: ${HEDERA_AI_BASE_URL:https://api.testnet.moonscape.hedera.com/v1}
+    # Your Hedera testnet API key - set via environment variable
+    api-key: ${HEDERA_AI_API_KEY}
     timeout: 30s
     max-tokens: 1000
     temperature: 0.7
+  # Hedera network configuration
+  network:
+    type: ${HEDERA_NETWORK:testnet}
+    node-url: ${HEDERA_NODE_URL:https://testnet.mirrornode.hedera.com}
+  # Account configuration for testnet
+  account:
+    id: ${HEDERA_ACCOUNT_ID}
+    private-key: ${HEDERA_PRIVATE_KEY}
 
 # CORS Configuration for React frontend
 cors:
@@ -51,6 +61,25 @@ management:
   endpoint:
     health:
       show-details: ALWAYS
+
+---
+# Testnet Profile (Default for development)
+spring:
+  config:
+    activate:
+      on-profile: testnet
+
+hedera:
+  ai:
+    base-url: https://api.testnet.moonscape.hedera.com/v1
+  network:
+    type: testnet
+    node-url: https://testnet.mirrornode.hedera.com
+
+logging:
+  level:
+    com.syncsenta.ai: DEBUG
+    org.springframework.web: INFO
 
 ---
 # Development Profile
