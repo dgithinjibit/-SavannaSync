@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useCallback } from 'react';
+import * as React from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../services/supabaseClient';
 import * as authService from '../services/authService';
@@ -17,14 +17,14 @@ interface AuthContextType {
     uploadProfilePhoto: (file: File) => Promise<string>;
 }
 
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [user, setUser] = useState<User | null>(null);
-    const [userData, setUserData] = useState<UserData | null>(null);
-    const [loading, setLoading] = useState(true);
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+    const [user, setUser] = React.useState<User | null>(null);
+    const [userData, setUserData] = React.useState<UserData | null>(null);
+    const [loading, setLoading] = React.useState(true);
 
-    const loadUserData = useCallback((user: User | null) => {
+    const loadUserData = React.useCallback((user: User | null) => {
         if (user) {
             const role = user.user_metadata?.role as UserRole;
             const schoolId = user.user_metadata?.school_id as string;
@@ -51,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     }, []);
 
-    useEffect(() => {
+    React.useEffect(() => {
         const getSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             setUser(session?.user ?? null);

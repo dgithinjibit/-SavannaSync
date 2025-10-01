@@ -9,12 +9,13 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx",
+    "jsx": "react",
+    "types": ["vite/client", "react", "react-dom"],
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "*.tsx", "*.ts"],
+  "include": ["src", "types", "*.tsx", "*.ts", "components/**/*", "views/**/*", "hooks/**/*", "services/**/*", "contexts/**/*"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

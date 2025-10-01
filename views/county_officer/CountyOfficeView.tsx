@@ -1,18 +1,18 @@
 
-import React, { useState } from 'react';
+import * as React from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import * as dataService from '../../services/dataService';
 import DataCard from '../../components/DataCard';
 import LoadingSpinner from '../../components/LoadingSpinner';
-import { SchoolIcon } from '../../components/icons';
+import { SchoolIcon } from '../../components/Icons';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import * as geminiService from '../../services/geminiService';
+import * as hederaService from '../../services/hederaJavaBackendService';
 
 const EquityHeatmap = () => {
     const { userData } = useAuth();
-    const [heatmapData, setHeatmapData] = useState<any>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
+    const [heatmapData, setHeatmapData] = React.useState<any>(null);
+    const [loading, setLoading] = React.useState(false);
+    const [error, setError] = React.useState('');
 
     const generateHeatmap = async () => {
         if (!userData) return;
@@ -20,7 +20,7 @@ const EquityHeatmap = () => {
         setError('');
         setHeatmapData(null);
         try {
-            const data = await geminiService.getEquityAnalysis(userData.county);
+            const data = await hederaService.getEquityAnalysis(userData.county);
             setHeatmapData(data);
         } catch (err) {
             setError('Failed to generate equity analysis. Please try again.');
