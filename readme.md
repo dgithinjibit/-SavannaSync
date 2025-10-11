@@ -19,46 +19,48 @@ Every feature must be:
 ## Getting Started
 
 1. Clone the repository:
-\`\`\`bash
+```bash
 git clone https://github.com/dgithinjibit/dgithinjibit.github.io.git
 cd syncsenta
-\`\`\`
+```
 
 2. Install frontend dependencies:
-\`\`\`bash
+```bash
 npm run install:frontend
-\`\`\`
+```
 
 3. Set up environment variables for the frontend:
-\`\`\`bash
+```bash
 cp .env.example frontend/.env
-\`\`\`
+```
 
 4. Add your API keys to `frontend/.env`:
-- `VITE_JAVA_AI_SERVICE_URL` - Your Hedera Java AI service URL (default: http://localhost:8081/api)
-- `VITE_SUPABASE_URL` - Your Supabase project URL
-- `VITE_SUPABASE_ANON_KEY` - Your Supabase anonymous key
-
+```bash
+VITE_JAVA_AI_SERVICE_URL=Your_Hedera_Java_AI_service_URL #(default: http://localhost:8081/api)
+VITE_SUPABASE_URL=Your_Supabase_project_URL
+VITE_SUPABASE_ANON_KEY=Your_Supabase_anonymous_key
+```
 5. Configure the backend (Java Spring Boot):
-\`\`\`bash
+```bash
 cd backend/syncsenta-ai-service
 cp ../.env.example .env
-\`\`\`
+```
 
 6. Add your Hedera credentials to `backend/syncsenta-ai-service/.env`:
-- `HEDERA_AI_API_KEY` - Your Hedera Moonscape AI API key
-- `HEDERA_ACCOUNT_ID` - Your Hedera testnet account ID (format: 0.0.xxxxxx)
-- `HEDERA_PRIVATE_KEY` - Your Hedera testnet private key
-
+```bash
+HEDERA_AI_API_KEY=Your_Hedera_Moonscape_AI_API_key
+HEDERA_ACCOUNT_ID=Your_Hedera_testnet_account_ID
+HEDERA_PRIVATE_KEY=Your_Hedera_testnet_private_key
+```
 7. Start the development servers:
-\`\`\`bash
+```bash
 # From the root directory
 npm run dev:frontend    # Starts React app on http://localhost:5175
 npm run dev:backend     # Starts Java backend on http://localhost:8081
 
 # Or start both simultaneously (if you have concurrently installed)
 npm run dev:all
-\`\`\`
+```
 
 ## Available Scripts
 
@@ -77,7 +79,6 @@ npm run dev:all
 - `npm run install:all` - Install all dependencies
 
 ## Project Structure
-
 ```
 SavannaSync/
 ├── backend/                     # Backend Services
@@ -118,6 +119,9 @@ SavannaSync/
 ├── package.json                 # Root workspace configuration
 └── readme.md                    # This documentation
 ```
+**Navigate to `frontend/` documentation**: [frontend](frontend/README.md)
+
+**Navigate to `backend/` documentation**: [backend](backend/README.md)
 
 ### PHASE 0: FOUNDATION SETUP (DAY 1-2)
 Critical path: Must be 100% complete before any UI work begins.
