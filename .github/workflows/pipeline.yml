@@ -28,6 +28,7 @@ jobs:
         run: |
           echo "Navigate to Project Repo..."
           echo "--------"
+          echo "$PRIVATE_KEY" > private-key && chmod 700 private-key
           ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USER}@${SERVER_IP} '
            cd SavannaSync
            git init
@@ -46,6 +47,7 @@ jobs:
     steps:
       - name: Install Node version 22
         run: |
+          echo "$PRIVATE_KEY" > private-key && chmod 700 private-key
           ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USER}@${SERVER_IP} '
           cd ~ #Home directory
           echo "Checking nvm and node versions...if available"
@@ -73,7 +75,8 @@ jobs:
 
       - name: Install Java 21
         run: |
-          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USER}@${SERVER_IP} '
+          echo "$PRIVATE_KEY" > private-key && chmod 700 private-key
+          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
           cd ~
           echo "Installing Java..."
           if [java --version &> /dev/null]; then
@@ -84,7 +87,8 @@ jobs:
 
       - name: Installing Maven
         run: |
-          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USER}@${SERVER_IP} '
+          echo "$PRIVATE_KEY" > private-key && chmod 700 private-key
+          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
           cd ~
           echo "Installing Maven"
           if [mvn --version &> /dev/null]; then
