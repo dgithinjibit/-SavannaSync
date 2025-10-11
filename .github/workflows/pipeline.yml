@@ -11,7 +11,7 @@ env:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     name: Deploy to web server
     
     steps:
@@ -20,7 +20,6 @@ jobs:
 
       - name: Connect via SSH and verify server
         run: |
-          set -e
           echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
           ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
             # List files in user directory
@@ -30,33 +29,38 @@ jobs:
 
       - name: Update project repo
         run: |
-          set -e
           echo "Navigate to Project Repo..."
           echo "--------"
           echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
           ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
            cd SavannaSync
-           git restore .
            git pull origin main
            git clean -fd
+           git rm -rf .github/
           '
           rm -f private-key
 
   install:
     runs-on: ubuntu-24.04
     name: Install dependencies
+
     steps:
-      - name: Install Node version 22
+      - name: Update and upgrade apt packages
         run: |
-          set -e
           echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
           ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
-          set -e
+          sudo apt update && sudo apt upgrade -y
+          '
+          rm -f private-key
+
+      - name: Install/Use Node version 22
+        run: |
+          echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
+          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
           cd ~ # Home directory
           echo "Checking nvm and node versions...if available"
           if command -v nvm &> /dev/null; then
             echo "NVM installed: $(nvm --version)"
-            \. "$HOME/.nvm/nvm.sh"
           else
             echo "NVM not installed. Installing now..."
             curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
@@ -67,22 +71,19 @@ jobs:
             echo "Node installed: $(node --version)"
             echo "Upgrade to Node 22..."
             nvm install 22
-            nvm use 22
-            echo "NPM version: $(npm --version)"
-            echo "Node version: $(node --version)"
           else
             echo "Installing Node 22..."
             nvm install 22
-            nvm use 22
-            echo "NPM version: $(npm --version)"
-            echo "Node version: $(node --version)"
-          fi          
+          fi
+              
+          nvm use 22
+          echo "NPM version: $(npm --version)"
+          echo "Node version: $(node --version)"
           '
           rm -f private-key
 
       - name: Install Java 21
         run: |
-          set -e
           echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
           ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
           cd ~
@@ -91,7 +92,6 @@ jobs:
             echo "Java installed: $(java --version)"
           else
             echo "Installing OpenJDK 21..."
-            sudo apt update
             sudo apt install -y openjdk-21-jdk
             echo "Java installed: $(java --version)"
           fi
@@ -100,32 +100,31 @@ jobs:
 
       - name: Install Maven
         run: |
-          set -e
           echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
           ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
-          set -e
           cd ~
           echo "Installing Maven..."
           if command -v mvn &> /dev/null; then
             echo "Maven installed: $(mvn --version)"
           else
             echo "Installing Maven..."
-            sudo apt update
             sudo apt install -y maven
             echo "Maven installed: $(mvn --version)"
           fi
           '
           rm -f private-key
 
-      - name: Install frontend dependencies
+  prepare-environment:
+    runs-on: ubuntu-24.04
+    needs: [install]
+    name: Prepare environment
+
+    steps:
+      - name: Install Node dependencies
         run: |
-          set -e
           echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
           ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
-          set -e
           cd SavannaSync/frontend
-          \. "$HOME/.nvm/nvm.sh"
-          nvm use 22
           npm install
           echo "Frontend dependencies installed successfully"
           '
@@ -133,14 +132,11 @@ jobs:
 
       - name: Build backend
         run: |
-          set -e
           echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
           ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
-          set -e
           cd SavannaSync/backend/syncsenta-ai-service
           mvn clean compile
           echo "Backend built successfully"
           '
           rm -f private-key
       
-          
