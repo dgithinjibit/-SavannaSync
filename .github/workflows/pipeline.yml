@@ -3,56 +3,59 @@ on:
   push:
     branches: ["main"]
 
+env:
+  # Global environment variables
+  PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+  SERVER_IP: ${{ secrets.SERVER_IP }}
+  SERVER_USERNAME: ${{ secrets.SERVER_USERNAME }}
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      PRIVATE_KEY: ${{secrets.PRIVATE_KEY}}
-      SERVER_IP: ${{secrets.SERVER_IP}}
-      SERVER_USERNAME: ${{secrets.SERVER_USERNAME}}
     name: Deploy to web server
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Connect via SSH
+      - name: Connect via SSH and verify server
         run: |
-          echo "$PRIVATE_KEY" > private-key && chmod 700 private-key
+          set -e
+          echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
           ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
             # List files in user directory
-            ls -la /home/ubuntu
+            ls -la ~
           '
+          rm -f private-key
 
       - name: Update project repo
         run: |
+          set -e
           echo "Navigate to Project Repo..."
           echo "--------"
-          echo "$PRIVATE_KEY" > private-key && chmod 700 private-key
-          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USER}@${SERVER_IP} '
+          echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
+          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
            cd SavannaSync
-           git init
            git restore .
            git pull origin main
-           git rm -rf github/
+           git clean -fd
           '
+          rm -f private-key
 
   install:
     runs-on: ubuntu-24.04
-    env:
-      PRIVATE_KEY: ${{secrets.PRIVATE_KEY}}
-      SERVER_IP: ${{secrets.SERVER_IP}}
-      SERVER_USERNAME: ${{secrets.SERVER_USERNAME}}
     name: Install dependencies
     steps:
       - name: Install Node version 22
         run: |
-          echo "$PRIVATE_KEY" > private-key && chmod 700 private-key
-          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USER}@${SERVER_IP} '
-          cd ~ #Home directory
+          set -e
+          echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
+          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
+          set -e
+          cd ~ # Home directory
           echo "Checking nvm and node versions...if available"
-          if [command -v nvm &> /dev/null]; then
-            echo "NVM installed: ${nvm --version}"
+          if command -v nvm &> /dev/null; then
+            echo "NVM installed: $(nvm --version)"
             \. "$HOME/.nvm/nvm.sh"
           else
             echo "NVM not installed. Installing now..."
@@ -60,41 +63,84 @@ jobs:
             \. "$HOME/.nvm/nvm.sh"
           fi
 
-          if [command -v node &> /dev/null]; then
-            echo "Node installed: ${node --version}
+          if command -v node &> /dev/null; then
+            echo "Node installed: $(node --version)"
             echo "Upgrade to Node 22..."
             nvm install 22
-            echo "NPM version: ${npm --version}"
-            echo "Node version: ${node --version}"
+            nvm use 22
+            echo "NPM version: $(npm --version)"
+            echo "Node version: $(node --version)"
           else
+            echo "Installing Node 22..."
             nvm install 22
-            echo "NPM version: ${npm --version}"
-            echo "Node version: ${node --version}"
+            nvm use 22
+            echo "NPM version: $(npm --version)"
+            echo "Node version: $(node --version)"
           fi          
           '
+          rm -f private-key
 
       - name: Install Java 21
         run: |
-          echo "$PRIVATE_KEY" > private-key && chmod 700 private-key
+          set -e
+          echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
           ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
           cd ~
           echo "Installing Java..."
-          if [java --version &> /dev/null]; then
-            echo "Java installed: ${java --version}"
+          if command -v java &> /dev/null; then
+            echo "Java installed: $(java --version)"
           else
-            sudo apt install openjdk-21-jdk
+            echo "Installing OpenJDK 21..."
+            sudo apt update
+            sudo apt install -y openjdk-21-jdk
+            echo "Java installed: $(java --version)"
           fi
-
-      - name: Installing Maven
-        run: |
-          echo "$PRIVATE_KEY" > private-key && chmod 700 private-key
-          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
-          cd ~
-          echo "Installing Maven"
-          if [mvn --version &> /dev/null]; then
-            echo "Maven installed: ${mvn --version}"
-          else
-            sudo apt install maven
           '
+          rm -f private-key
+
+      - name: Install Maven
+        run: |
+          set -e
+          echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
+          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
+          set -e
+          cd ~
+          echo "Installing Maven..."
+          if command -v mvn &> /dev/null; then
+            echo "Maven installed: $(mvn --version)"
+          else
+            echo "Installing Maven..."
+            sudo apt update
+            sudo apt install -y maven
+            echo "Maven installed: $(mvn --version)"
+          fi
+          '
+          rm -f private-key
+
+      - name: Install frontend dependencies
+        run: |
+          set -e
+          echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
+          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
+          set -e
+          cd SavannaSync/frontend
+          \. "$HOME/.nvm/nvm.sh"
+          nvm use 22
+          npm install
+          echo "Frontend dependencies installed successfully"
+          '
+          rm -f private-key
+
+      - name: Build backend
+        run: |
+          set -e
+          echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
+          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
+          set -e
+          cd SavannaSync/backend/syncsenta-ai-service
+          mvn clean compile
+          echo "Backend built successfully"
+          '
+          rm -f private-key
       
           
