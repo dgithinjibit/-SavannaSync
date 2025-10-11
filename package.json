@@ -23,7 +23,7 @@
     "@types/ws": "^8.18.1",
     "@vitejs/plugin-react": "^4.7.0",
     "typescript": "^5.3.3",
-     "vite": "^4.5.14"
+    "vite": "^7.1.9"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.3",
