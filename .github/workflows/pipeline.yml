@@ -1,0 +1,96 @@
+name: Run project on server
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      PRIVATE_KEY: ${{secrets.PRIVATE_KEY}}
+      SERVER_IP: ${{secrets.SERVER_IP}}
+      SERVER_USERNAME: ${{secrets.SERVER_USERNAME}}
+    name: Deploy to web server
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Connect via SSH
+        run: |
+          echo "$PRIVATE_KEY" > private-key && chmod 700 private-key
+          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USER}@${SERVER_IP} '
+            # List files in user directory
+            ls -la /home/ubuntu
+          '
+
+      - name: Update project repo
+        run: |
+          echo "Navigate to Project Repo..."
+          echo "--------"
+          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USER}@${SERVER_IP} '
+           cd SavannaSync
+           git init
+           git restore .
+           git pull origin main
+           git rm -rf github/
+          '
+
+  install:
+    runs-on: ubuntu-24.04
+    env:
+      PRIVATE_KEY: ${{secrets.PRIVATE_KEY}}
+      SERVER_IP: ${{secrets.SERVER_IP}}
+      SERVER_USERNAME: ${{secrets.SERVER_USERNAME}}
+    name: Install dependencies
+    steps:
+      - name: Install Node version 22
+        run: |
+          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USER}@${SERVER_IP} '
+          cd ~ #Home directory
+          echo "Checking nvm and node versions...if available"
+          if [command -v nvm &> /dev/null]; then
+            echo "NVM installed: ${nvm --version}"
+            \. "$HOME/.nvm/nvm.sh"
+          else
+            echo "NVM not installed. Installing now..."
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+            \. "$HOME/.nvm/nvm.sh"
+          fi
+
+          if [command -v node &> /dev/null]; then
+            echo "Node installed: ${node --version}
+            echo "Upgrade to Node 22..."
+            nvm install 22
+            echo "NPM version: ${npm --version}"
+            echo "Node version: ${node --version}"
+          else
+            nvm install 22
+            echo "NPM version: ${npm --version}"
+            echo "Node version: ${node --version}"
+          fi          
+          '
+
+      - name: Install Java 21
+        run: |
+          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USER}@${SERVER_IP} '
+          cd ~
+          echo "Installing Java..."
+          if [java --version &> /dev/null]; then
+            echo "Java installed: ${java --version}"
+          else
+            sudo apt install openjdk-21-jdk
+          fi
+
+      - name: Installing Maven
+        run: |
+          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USER}@${SERVER_IP} '
+          cd ~
+          echo "Installing Maven"
+          if [mvn --version &> /dev/null]; then
+            echo "Maven installed: ${mvn --version}"
+          else
+            sudo apt install maven
+          '
+      
+          
