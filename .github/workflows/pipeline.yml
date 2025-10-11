@@ -19,7 +19,7 @@ jobs:
       - name: Connect via SSH
         run: |
           echo "$PRIVATE_KEY" > private-key && chmod 700 private-key
-          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USER}@${SERVER_IP} '
+          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
             # List files in user directory
             ls -la /home/ubuntu
           '
