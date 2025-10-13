@@ -19,37 +19,109 @@ Every feature must be:
 ## Getting Started
 
 1. Clone the repository:
-\`\`\`bash
+```bash
 git clone https://github.com/dgithinjibit/dgithinjibit.github.io.git
 cd syncsenta
-\`\`\`
+```
 
-2. Install dependencies:
-\`\`\`bash
-npm install
-\`\`\`
+2. Install frontend dependencies:
+```bash
+npm run install:frontend
+```
 
-3. Set up environment variables:
-\`\`\`bash
-cp .env.example .env
-\`\`\`
+3. Set up environment variables for the frontend:
+```bash
+cp .env.example frontend/.env
+```
 
-4. Add your API keys to `.env`:
-- `VITE_JAVA_AI_SERVICE_URL` - Your Hedera Java AI service URL
-- `VITE_SUPABASE_URL` - Your Supabase project URL
-- `VITE_SUPABASE_ANON_KEY` - Your Supabase anonymous key
+4. Add your API keys to `frontend/.env`:
+```bash
+VITE_JAVA_AI_SERVICE_URL=Your_Hedera_Java_AI_service_URL #(default: http://localhost:8081/api)
+VITE_SUPABASE_URL=Your_Supabase_project_URL
+VITE_SUPABASE_ANON_KEY=Your_Supabase_anonymous_key
+```
+5. Configure the backend (Java Spring Boot):
+```bash
+cd backend/syncsenta-ai-service
+cp ../.env.example .env
+```
 
-5. Start the development server:
-\`\`\`bash
-npm run dev
-\`\`\`
+6. Add your Hedera credentials to `backend/syncsenta-ai-service/.env`:
+```bash
+HEDERA_AI_API_KEY=Your_Hedera_Moonscape_AI_API_key
+HEDERA_ACCOUNT_ID=Your_Hedera_testnet_account_ID
+HEDERA_PRIVATE_KEY=Your_Hedera_testnet_private_key
+```
+7. Start the development servers:
+```bash
+# From the root directory
+npm run dev:frontend    # Starts React app on http://localhost:5175
+npm run dev:backend     # Starts Java backend on http://localhost:8081
+
+# Or start both simultaneously (if you have concurrently installed)
+npm run dev:all
+```
 
 ## Available Scripts
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run typecheck` - Run TypeScript type checking
+### Frontend (React + TypeScript)
+- `npm run dev:frontend` - Start React development server
+- `npm run build:frontend` - Build frontend for production
+- `npm run preview:frontend` - Preview frontend production build
+
+### Backend (Java Spring Boot)
+- `npm run dev:backend` - Start Java backend server
+- `npm run build:backend` - Build backend JAR file
+- `npm run test:backend` - Run backend tests
+
+### Combined
+- `npm run install:frontend` - Install frontend dependencies
+- `npm run install:all` - Install all dependencies
+
+## Project Structure
+```
+SavannaSync/
+├── backend/                     # Backend Services
+│   ├── syncsenta-ai-service/    # Java Spring Boot AI Service
+│   │   ├── src/                 # Java source code
+│   │   │   └── main/            # Main application code
+│   │   │       ├── java/        # Java packages
+│   │   │       └── resources/   # Configuration files
+│   │   ├── target/              # Maven build artifacts
+│   │   ├── .env                 # Backend environment variables
+│   │   └── pom.xml              # Maven configuration
+│   ├── .env.example             # Backend env template
+│   ├── docker-compose.yml       # Multi-container setup
+│   ├── Dockerfile               # Docker container config
+│   ├── Dockerfile.simple        # Simplified Docker config
+│   └── README.md                # Backend documentation
+├── frontend/                    # React TypeScript Frontend
+│   ├── components/              # Reusable UI components
+│   ├── contexts/                # React context providers
+│   ├── hooks/                   # Custom React hooks
+│   ├── services/                # API and external services
+│   ├── src/                     # Additional source files
+│   ├── types/                   # TypeScript type definitions
+│   ├── views/                   # Page-level components
+│   ├── .env                     # Frontend environment variables
+│   ├── App.tsx                  # Main application component
+│   ├── constants.ts             # Application constants
+│   ├── index.html               # HTML template
+│   ├── index.tsx                # Application entry point
+│   ├── metadata.json            # Application metadata
+│   ├── netlify.toml             # Netlify deployment config
+│   ├── package.json             # Frontend dependencies
+│   ├── tsconfig.json            # TypeScript configuration
+│   ├── types.ts                 # Global type definitions
+│   └── vite.config.ts           # Vite configuration
+├── .env.example                 # Root environment template
+├── .gitignore                   # Git ignore patterns
+├── package.json                 # Root workspace configuration
+└── readme.md                    # This documentation
+```
+**Navigate to `frontend/` documentation**: [frontend](frontend/README.md)
+
+**Navigate to `backend/` documentation**: [backend](backend/README.md)
 
 ### PHASE 0: FOUNDATION SETUP (DAY 1-2)
 Critical path: Must be 100% complete before any UI work begins.
