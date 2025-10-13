@@ -34,6 +34,7 @@ jobs:
           echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
           ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
            cd SavannaSync
+           git restore .
            git pull origin main
            git clean -fd
            git rm -rf .github/
