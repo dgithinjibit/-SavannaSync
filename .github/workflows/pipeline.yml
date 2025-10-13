@@ -127,7 +127,7 @@ jobs:
           cd SavannaSync/frontend
           # Build the frontend for production
           echo "Building frontend packages..."
-          if command -v npm &> /dev/null; then;
+          if command -v npm &> /dev/null; then
             npm install || echo "npm install failed"
             npm run build
           fi
