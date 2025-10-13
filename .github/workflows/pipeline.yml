@@ -127,6 +127,14 @@ jobs:
           cd SavannaSync/frontend
           npm install
           echo "Frontend dependencies installed successfully"
+
+          # Build the frontend for production
+
+          npm run build
+          echo "Frontend build completed successfully"
+          # Copy to web root
+          sudo cp -r dist/* /var/www/SavannaSync/frontend/
+          echo "Frontend built and copied to web root successfully"
           '
           rm -f private-key
 
