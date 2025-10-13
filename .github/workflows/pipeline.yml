@@ -37,7 +37,6 @@ jobs:
            git restore .
            git pull origin main
            git clean -fd
-           git rm -rf .github/
           '
           rm -f private-key
 
