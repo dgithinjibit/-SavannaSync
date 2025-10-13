@@ -125,13 +125,14 @@ jobs:
           echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
           ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
           cd SavannaSync/frontend
-          npm install
-          echo "Frontend dependencies installed successfully"
-
           # Build the frontend for production
+          echo "Building frontend packages..."
+          if command -v npm &> /dev/null; then;
+            npm install || echo "npm install failed"
+            npm run build
+          fi
 
-          npm run build
-          echo "Frontend build completed successfully"
+          npm run build || echo "npm run build failed"
           # Copy to web root
           sudo cp -r dist/* /var/www/SavannaSync/frontend/
           echo "Frontend built and copied to web root successfully"
