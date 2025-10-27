@@ -49,7 +49,22 @@ jobs:
         run: |
           echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
           ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
-          sudo apt update && sudo apt upgrade -y
+            sudo apt update && sudo apt upgrade -y
+          '
+          rm -f private-key
+
+      - name: Install NGINX
+        run: |
+          echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
+          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
+            if command -v nginx &> /dev/null; then
+              echo "NGINX already installed: $(nginx -v)"
+            else
+              echo "Installing NGINX..."
+              sudo apt install -y nginx
+              sudo systemctl enable nginx
+              echo "NGINX installed: $(nginx -v)"
+            fi
           '
           rm -f private-key
 
@@ -57,28 +72,28 @@ jobs:
         run: |
           echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
           ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
-          cd ~ # Home directory
-          echo "Checking nvm and node versions...if available"
-          if command -v nvm &> /dev/null; then
-            echo "NVM installed: $(nvm --version)"
-          else
-            echo "NVM not installed. Installing now..."
-            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
-            \. "$HOME/.nvm/nvm.sh"
-          fi
+            cd ~ # Home directory
+            echo "Checking nvm and node versions...if available"
+            if command -v nvm &> /dev/null; then
+              echo "NVM installed: $(nvm --version)"
+            else
+              echo "NVM not installed. Installing now..."
+              curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+              \. "$HOME/.nvm/nvm.sh"
+            fi
 
-          if command -v node &> /dev/null; then
-            echo "Node installed: $(node --version)"
-            echo "Upgrade to Node 22..."
-            nvm install 22
-          else
-            echo "Installing Node 22..."
-            nvm install 22
-          fi
-              
-          nvm use 22
-          echo "NPM version: $(npm --version)"
-          echo "Node version: $(node --version)"
+            if command -v node &> /dev/null; then
+              echo "Node installed: $(node --version)"
+              echo "Upgrade to Node 22..."
+              nvm install 22
+            else
+              echo "Installing Node 22..."
+              nvm install 22
+            fi
+                
+            nvm use 22
+            echo "NPM version: $(npm --version)"
+            echo "Node version: $(node --version)"
           '
           rm -f private-key
 
@@ -120,22 +135,19 @@ jobs:
     name: Prepare environment
 
     steps:
-      - name: Install Node dependencies
+      - name: Build Frontend
         run: |
           echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
           ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
-          cd SavannaSync/frontend
-          # Build the frontend for production
-          echo "Building frontend packages..."
-          if command -v npm &> /dev/null; then
-            npm install || echo "npm install failed"
+            cd SavannaSync/frontend
+            # Load NVM and build the frontend for production
+            \. "$HOME/.nvm/nvm.sh"
+            nvm use 22
+            echo "Building frontend packages..."
+            npm cache clean --force
+            npm install
             npm run build
-          fi
-
-          npm run build || echo "npm run build failed"
-          # Copy to web root
-          sudo cp -r dist/* /var/www/SavannaSync/frontend/
-          echo "Frontend built and copied to web root successfully"
+            echo "Frontend built successfully"
           '
           rm -f private-key
 
@@ -143,9 +155,104 @@ jobs:
         run: |
           echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
           ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
-          cd SavannaSync/backend/syncsenta-ai-service
-          mvn clean compile
-          echo "Backend built successfully"
+            cd SavannaSync/backend/syncsenta-ai-service
+            echo "Building backend with Maven..."
+            mvn clean package -DskipTests
+            echo "Backend built successfully"
           '
           rm -f private-key
-      
+
+      - name: Copy backend JAR to deployment location
+        run: |
+          echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
+          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
+            # Create deployment directory
+            sudo mkdir -p /opt/syncsenta
+            
+            # Copy JAR file
+            cd SavannaSync/backend/syncsenta-ai-service
+            sudo cp target/syncsenta-ai-service-*.jar /opt/syncsenta/syncsenta-ai-service-1.0.0.jar
+            
+            # Set ownership
+            sudo chown -R $USER:$USER /opt/syncsenta
+            
+            echo "Backend JAR copied to deployment location"
+          '
+          rm -f private-key
+
+      - name: Run deployment configuration script
+        run: |
+          echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
+          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
+            cd SavannaSync
+            # Make deployment script executable
+            chmod +x deploy-cloud.sh
+            
+            # Run deployment configuration
+            ./deploy-cloud.sh ${SERVER_IP}
+            
+            echo "Deployment configuration completed"
+          '
+          rm -f private-key
+
+  start-application:
+    runs-on: ubuntu-24.04
+    needs: [prepare-environment]
+    name: Start Application Services
+
+    steps:
+      - name: Start and verify services
+        run: |
+          echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
+          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
+            echo "Starting application services..."
+            
+            # Start Java backend service
+            sudo systemctl start syncsenta-backend
+            sleep 5
+            
+            # Check if Java service is running
+            if sudo systemctl is-active --quiet syncsenta-backend; then
+              echo "Java backend service started successfully"
+            else
+              echo "Java backend service failed to start"
+              echo "Checking logs..."
+              sudo journalctl -u syncsenta-backend --no-pager -n 20
+            fi
+            
+            # Start NGINX
+            sudo systemctl restart nginx
+            
+            # Check if NGINX is running
+            if sudo systemctl is-active --quiet nginx; then
+              echo "NGINX started successfully"
+            else
+              echo "NGINX failed to start"
+              sudo nginx -t
+            fi
+            
+            # Test application accessibility
+            echo "Testing application accessibility..."
+            sleep 3
+            
+            # Test frontend
+            if curl -s -o /dev/null -w "%{http_code}" http://localhost | grep -q "200"; then
+              echo "Frontend is accessible"
+            else
+              echo "Frontend check failed - may need manual verification"
+            fi
+            
+            # Test backend health
+            if curl -s -o /dev/null -w "%{http_code}" http://localhost:8081/actuator/health 2>/dev/null | grep -q "200"; then
+              echo "Backend health check passed"
+            else
+              echo "Backend health endpoint not available (this may be normal)"
+            fi
+            
+            echo ""
+            echo "Application startup completed!"
+            echo "Access your application at: http://${SERVER_IP}"
+          '
+          rm -f private-key
+
+  
