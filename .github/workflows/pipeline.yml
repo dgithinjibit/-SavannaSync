@@ -135,11 +135,20 @@ jobs:
     name: Prepare environment
 
     steps:
-      - name: Build Frontend
+      - name: Setup environment and build Frontend
         run: |
           echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
           ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
             cd SavannaSync/frontend
+            
+            # Copy .env.example to .env (without modifications)
+            if [ -f .env.example ]; then
+              cp .env.example .env
+              echo "Environment file created from .env.example"
+            else
+              echo "Warning: .env.example not found"
+            fi
+            
             # Load NVM and build the frontend for production
             \. "$HOME/.nvm/nvm.sh"
             nvm use 22
@@ -214,10 +223,13 @@ jobs:
             # Check if Java service is running
             if sudo systemctl is-active --quiet syncsenta-backend; then
               echo "Java backend service started successfully"
+              echo "Backend status: $(sudo systemctl status syncsenta-backend --no-pager -l)"
             else
               echo "Java backend service failed to start"
               echo "Checking logs..."
-              sudo journalctl -u syncsenta-backend --no-pager -n 20
+              sudo journalctl -u syncsenta-backend --no-pager -n 30
+              echo "Service status:"
+              sudo systemctl status syncsenta-backend --no-pager -l
             fi
             
             # Start NGINX
@@ -235,18 +247,48 @@ jobs:
             echo "Testing application accessibility..."
             sleep 3
             
-            # Test frontend
+            # Test frontend (served by NGINX)
+            echo "Testing frontend..."
             if curl -s -o /dev/null -w "%{http_code}" http://localhost | grep -q "200"; then
-              echo "Frontend is accessible"
+              echo "Frontend is accessible via NGINX"
             else
-              echo "Frontend check failed - may need manual verification"
+              echo "Frontend accessibility check failed"
+              echo "NGINX status: $(sudo systemctl is-active nginx)"
+              echo "NGINX error logs:"
+              sudo tail -n 10 /var/log/nginx/error.log
             fi
             
-            # Test backend health
+            # Test backend health endpoints
+            echo "Testing backend health endpoints..."
+            
+            # Test Spring Boot Actuator health endpoint
             if curl -s -o /dev/null -w "%{http_code}" http://localhost:8081/actuator/health 2>/dev/null | grep -q "200"; then
-              echo "Backend health check passed"
+              echo "Backend actuator health check passed"
             else
-              echo "Backend health endpoint not available (this may be normal)"
+              echo "Backend actuator health endpoint not available"
+            fi
+            
+            # Test custom tutor health endpoint
+            if curl -s -o /dev/null -w "%{http_code}" http://localhost:8081/api/tutor/health 2>/dev/null | grep -q "200"; then
+              echo "Tutor service health check passed"
+            else
+              echo "Tutor service health endpoint not available"
+            fi
+            
+            # Test analysis service health endpoint
+            if curl -s -o /dev/null -w "%{http_code}" http://localhost:8081/api/analysis/health 2>/dev/null | grep -q "200"; then
+              echo "Analysis service health check passed"
+            else
+              echo "Analysis service health endpoint not available"
+            fi
+            
+            # Test if backend is responding on port 8081
+            if curl -s -o /dev/null -w "%{http_code}" http://localhost:8081/ 2>/dev/null | grep -q -E "200|404|403"; then
+              echo "Backend is responding on port 8081"
+            else
+              echo "Backend is not responding on port 8081"
+              echo "Checking if port 8081 is listening:"
+              sudo netstat -tlnp | grep :8081 || echo "Port 8081 not listening"
             fi
             
             echo ""

@@ -5,13 +5,6 @@
 
 set -e  # Exit on any error
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
 # Configuration
 PROJECT_DIR="/home/ubuntu/SavannaSync"
 NGINX_SITE_NAME="syncsenta"
@@ -21,23 +14,23 @@ JAVA_JAR_PATH="/opt/syncsenta/syncsenta-ai-service-1.0.0.jar"
 # Get VM IP address
 VM_IP=${1:-$(curl -s ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')}
 
-echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}  SavannaSync Cloud Deployment Script  ${NC}"
-echo -e "${BLUE}========================================${NC}"
-echo -e "${GREEN}VM IP Address: ${VM_IP}${NC}"
+echo "========================================"
+echo "  SavannaSync Cloud Deployment Script  "
+echo "========================================"
+echo "VM IP Address: ${VM_IP}"
 echo
 
 # Function to print status
 print_status() {
-    echo -e "${GREEN}[INFO]${NC} $1"
+    echo "[INFO] $1"
 }
 
 print_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
+    echo "[WARNING] $1"
 }
 
 print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
+    echo "[ERROR] $1"
 }
 
 # Check if running as root
@@ -292,43 +285,38 @@ print_status "Management scripts created"
 # 5. Final status check
 print_status "Performing final status check..."
 
-echo
-echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}         DEPLOYMENT SUMMARY            ${NC}"
-echo -e "${BLUE}========================================${NC}"
-
 # Check services status
 if sudo systemctl is-active --quiet nginx; then
-    echo -e "${GREEN}✓ NGINX: Running${NC}"
+    echo "NGINX: Running"
 else
-    echo -e "${RED}✗ NGINX: Failed${NC}"
+    echo "NGINX: Failed"
 fi
 
 if sudo systemctl is-active --quiet $JAVA_SERVICE_NAME; then
-    echo -e "${GREEN}✓ Java Backend: Running${NC}"
+    echo "Java Backend: Running"
 else
-    echo -e "${RED}✗ Java Backend: Failed${NC}"
+    echo "Java Backend: Failed"
 fi
 
 # Test HTTP response
 if curl -s -o /dev/null -w "%{http_code}" http://localhost | grep -q "200"; then
-    echo -e "${GREEN}✓ Frontend: Accessible${NC}"
+    echo "Frontend: Accessible"
 else
-    echo -e "${YELLOW}⚠ Frontend: Check manually${NC}"
+    echo "Frontend: Check manually"
 fi
 
 echo
-echo -e "${GREEN}Application URLs:${NC}"
-echo -e "Frontend: ${BLUE}http://${VM_IP}${NC}"
-echo -e "Backend API: ${BLUE}http://${VM_IP}/api${NC}"
-echo -e "Health Check: ${BLUE}http://${VM_IP}/health${NC}"
+echo "Application URLs:"
+echo "Frontend: http://${VM_IP}"
+echo "Backend API: http://${VM_IP}/api"
+echo "Health Check: http://${VM_IP}/health"
 
 echo
-echo -e "${GREEN}Management Commands:${NC}"
-echo -e "View logs: ${YELLOW}./view-logs.sh${NC}"
-echo -e "Restart services: ${YELLOW}./restart-services.sh${NC}"
-echo -e "Update application: ${YELLOW}./update-app.sh${NC}"
+echo "Management Commands:"
+echo "View logs: ./view-logs.sh"
+echo "Restart services: ./restart-services.sh"
+echo "Update application: ./update-app.sh"
 
 echo
-echo -e "${GREEN}Deployment completed successfully!${NC}"
-echo -e "${BLUE}Visit http://${VM_IP} to access your application${NC}"
+echo "Deployment completed successfully!"
+echo "Visit http://${VM_IP} to access your application"

@@ -78,15 +78,24 @@ npm run dev:all
 - `npm run install:frontend` - Install frontend dependencies
 - `npm run install:all` - Install all dependencies
 
+## Service Management
+
+### Starting Services
+```bash
+./start-services.sh
+```
+
+### Stopping Services
+```bash
+./stop-services.sh
+```
+
 ## Project Structure
 ```
 SavannaSync/
 ├── backend/                     # Backend Services
 │   ├── syncsenta-ai-service/    # Java Spring Boot AI Service
 │   │   ├── src/                 # Java source code
-│   │   │   └── main/            # Main application code
-│   │   │       ├── java/        # Java packages
-│   │   │       └── resources/   # Configuration files
 │   │   ├── target/              # Maven build artifacts
 │   │   ├── .env                 # Backend environment variables
 │   │   └── pom.xml              # Maven configuration
@@ -96,28 +105,13 @@ SavannaSync/
 │   ├── Dockerfile.simple        # Simplified Docker config
 │   └── README.md                # Backend documentation
 ├── frontend/                    # React TypeScript Frontend
-│   ├── components/              # Reusable UI components
-│   ├── contexts/                # React context providers
-│   ├── hooks/                   # Custom React hooks
-│   ├── services/                # API and external services
-│   ├── src/                     # Additional source files
-│   ├── types/                   # TypeScript type definitions
-│   ├── views/                   # Page-level components
-│   ├── .env                     # Frontend environment variables
-│   ├── App.tsx                  # Main application component
-│   ├── constants.ts             # Application constants
-│   ├── index.html               # HTML template
-│   ├── index.tsx                # Application entry point
-│   ├── metadata.json            # Application metadata
-│   ├── netlify.toml             # Netlify deployment config
-│   ├── package.json             # Frontend dependencies
-│   ├── tsconfig.json            # TypeScript configuration
-│   ├── types.ts                 # Global type definitions
-│   └── vite.config.ts           # Vite configuration
 ├── .env.example                 # Root environment template
 ├── .gitignore                   # Git ignore patterns
+├── deploy-cloud.sh              # Cloud deployment script
 ├── package.json                 # Root workspace configuration
-└── readme.md                    # This documentation
+├── readme.md                    # This documentation
+├── start-services.sh            # Start services script
+└── stop-services.sh             # Stop services script
 ```
 **Navigate to `frontend/` documentation**: [frontend](frontend/README.md)
 
