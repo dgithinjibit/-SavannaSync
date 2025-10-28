@@ -7,26 +7,26 @@ spring:
   application:
     name: syncsenta-ai-service
   profiles:
-    active: testnet
+    active: development
 
-# Hedera Testnet Configuration
-hedera:
-  ai:
-    # Hedera Testnet Moonscape AI endpoint
-    base-url: ${HEDERA_AI_BASE_URL:https://api.testnet.moonscape.hedera.com/v1}
-    # Your Hedera testnet API key - set via environment variable
-    api-key: ${HEDERA_AI_API_KEY}
+# AI Configuration - OpenAI Only for Hedera AI Agent
+openai:
+  api:
+    key: ${OPENAI_API_KEY}
+    base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+    model: ${OPENAI_MODEL:gpt-3.5-turbo}
+    max-tokens: ${OPENAI_MAX_TOKENS:1500}
+    temperature: ${OPENAI_TEMPERATURE:0.7}
     timeout: 30s
-    max-tokens: 1000
-    temperature: 0.7
-  # Hedera network configuration
+
+# Hedera Network Configuration (Blockchain layer - optional)
+hedera:
   network:
     type: ${HEDERA_NETWORK:testnet}
     node-url: ${HEDERA_NODE_URL:https://testnet.mirrornode.hedera.com}
-  # Account configuration for testnet
   account:
-    id: ${HEDERA_ACCOUNT_ID}
-    private-key: ${HEDERA_PRIVATE_KEY}
+    id: ${HEDERA_ACCOUNT_ID:#{null}}
+    private-key: ${HEDERA_PRIVATE_KEY:#{null}}
 
 # CORS Configuration for React frontend
 cors:
@@ -82,15 +82,22 @@ logging:
     org.springframework.web: INFO
 
 ---
-# Development Profile
+# Development Profile (Uses OpenAI as LLM Provider)
 spring:
   config:
     activate:
       on-profile: development
   
+# Primary LLM configuration for development
+openai:
+  api:
+    key: ${OPENAI_API_KEY}
+    model: ${OPENAI_MODEL:gpt-3.5-turbo}
+
 logging:
   level:
     com.syncsenta.ai: DEBUG
+    org.springframework.web: DEBUG
 
 ---
 # Production Profile

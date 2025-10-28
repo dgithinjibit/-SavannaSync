@@ -16,7 +16,8 @@ import java.time.Duration;
 import java.util.Map;
 
 /**
- * Service for integrating with Hedera Moonscape AI Agent
+ * Service for Hedera AI Agent using OpenAI as the exclusive LLM Provider
+ * Simplified configuration for reliable performance
  */
 @Service
 public class HederaAiClientService {
@@ -27,35 +28,48 @@ public class HederaAiClientService {
     private final ObjectMapper objectMapper;
     private final int maxTokens;
     private final double temperature;
+    private final String apiKey;
+    private final String baseUrl;
+    private final String model;
     
     public HederaAiClientService(
-            @Value("${hedera.ai.base-url}") String baseUrl,
-            @Value("${hedera.ai.api-key}") String apiKey,
-            @Value("${hedera.ai.timeout}") Duration timeout,
-            @Value("${hedera.ai.max-tokens}") int maxTokens,
-            @Value("${hedera.ai.temperature}") double temperature,
+            @Value("${openai.api.key}") String openaiApiKey,
+            @Value("${openai.api.base-url}") String openaiBaseUrl,
+            @Value("${openai.api.model}") String openaiModel,
+            @Value("${openai.api.max-tokens}") int maxTokens,
+            @Value("${openai.api.temperature}") double temperature,
+            @Value("${openai.api.timeout}") Duration timeout,
             ObjectMapper objectMapper) {
         
         this.maxTokens = maxTokens;
         this.temperature = temperature;
         this.objectMapper = objectMapper;
+        this.apiKey = openaiApiKey;
+        this.baseUrl = openaiBaseUrl;
+        this.model = openaiModel;
+        
+        if (openaiApiKey == null || openaiApiKey.trim().isEmpty() || openaiApiKey.contains("your_openai_api_key")) {
+            throw new IllegalArgumentException("OpenAI API key not configured! Please set OPENAI_API_KEY");
+        }
         
         this.webClient = WebClient.builder()
-                .baseUrl(baseUrl)
-                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
+                .baseUrl(this.baseUrl)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + this.apiKey)
                 .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(1024 * 1024))
                 .build();
         
-        logger.info("Hedera AI Client initialized with base URL: {}", baseUrl);
+        logger.info("Hedera AI Agent initialized with OpenAI LLM Provider");
+        logger.info("Base URL: {}", this.baseUrl);
+        logger.info("Model: {}", this.model);
     }
     
     /**
-     * Send a chat completion request to Hedera Moonscape AI
+     * Send a chat completion request using OpenAI
      */
     public Mono<String> chatCompletion(String systemPrompt, String userMessage) {
         var requestBody = Map.of(
-            "model", "hedera-moonscape-chat",
+            "model", model,
             "messages", new Object[] {
                 Map.of("role", "system", "content", systemPrompt),
                 Map.of("role", "user", "content", userMessage)
@@ -70,17 +84,17 @@ public class HederaAiClientService {
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(JsonNode.class)
-                .map(this::extractChatResponse)
-                .doOnError(error -> logger.error("Error calling Hedera AI: ", error))
+                .map(this::extractOpenAIResponse)
+                .doOnError(error -> logger.error("Error calling OpenAI API: ", error))
                 .onErrorReturn("Sorry, I'm having trouble thinking right now. Please try again.");
     }
     
     /**
-     * Send a streaming chat completion request
+     * Send a streaming chat completion request using OpenAI
      */
     public Flux<String> chatCompletionStream(String systemPrompt, String userMessage) {
         var requestBody = Map.of(
-            "model", "hedera-moonscape-chat",
+            "model", model,
             "messages", new Object[] {
                 Map.of("role", "system", "content", systemPrompt),
                 Map.of("role", "user", "content", userMessage)
@@ -123,27 +137,13 @@ public class HederaAiClientService {
             %s
             """, contextJson, userQuery);
         
-        var requestBody = Map.of(
-            "model", "hedera-moonscape-analyst",
-            "messages", new Object[] {
-                Map.of("role", "system", "content", systemPrompt),
-                Map.of("role", "user", "content", fullPrompt)
-            },
-            "max_tokens", maxTokens * 2, // Analysis needs more tokens
-            "temperature", temperature * 0.8 // Less creative for analysis
-        );
-        
-        return webClient.post()
-                .uri("/chat/completions")
-                .bodyValue(requestBody)
-                .retrieve()
-                .bodyToMono(JsonNode.class)
-                .map(this::extractChatResponse)
-                .doOnError(error -> logger.error("Error in analysis completion: ", error))
-                .onErrorReturn("Unable to complete analysis at this time. Please try again.");
+        return chatCompletion(systemPrompt + "\n\nYou are performing data analysis. Be thorough and provide insights.", fullPrompt);
     }
     
-    private String extractChatResponse(JsonNode response) {
+    /**
+     * Extract response from OpenAI API
+     */
+    private String extractOpenAIResponse(JsonNode response) {
         try {
             return response.path("choices")
                     .get(0)
@@ -151,11 +151,14 @@ public class HederaAiClientService {
                     .path("content")
                     .asText();
         } catch (Exception e) {
-            logger.error("Failed to extract chat response: ", e);
+            logger.error("Failed to extract OpenAI response: ", e);
             return "I had trouble processing that response.";
         }
     }
     
+    /**
+     * Extract streaming response from OpenAI API
+     */
     private String extractStreamingResponse(String data) {
         try {
             JsonNode json = objectMapper.readTree(data);
