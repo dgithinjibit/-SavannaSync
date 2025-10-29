@@ -34,9 +34,9 @@ jobs:
           echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
           ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
            cd SavannaSync
+           git restore .
            git pull origin main
            git clean -fd
-           git rm -rf .github/
           '
           rm -f private-key
 
@@ -49,7 +49,22 @@ jobs:
         run: |
           echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
           ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
-          sudo apt update && sudo apt upgrade -y
+            sudo apt update && sudo apt upgrade -y
+          '
+          rm -f private-key
+
+      - name: Install NGINX
+        run: |
+          echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
+          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
+            if command -v nginx &> /dev/null; then
+              echo "NGINX already installed: $(nginx -v)"
+            else
+              echo "Installing NGINX..."
+              sudo apt install -y nginx
+              sudo systemctl enable nginx
+              echo "NGINX installed: $(nginx -v)"
+            fi
           '
           rm -f private-key
 
@@ -57,28 +72,28 @@ jobs:
         run: |
           echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
           ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
-          cd ~ # Home directory
-          echo "Checking nvm and node versions...if available"
-          if command -v nvm &> /dev/null; then
-            echo "NVM installed: $(nvm --version)"
-          else
-            echo "NVM not installed. Installing now..."
-            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
-            \. "$HOME/.nvm/nvm.sh"
-          fi
+            cd ~ # Home directory
+            echo "Checking nvm and node versions...if available"
+            if command -v nvm &> /dev/null; then
+              echo "NVM installed: $(nvm --version)"
+            else
+              echo "NVM not installed. Installing now..."
+              curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+              \. "$HOME/.nvm/nvm.sh"
+            fi
 
-          if command -v node &> /dev/null; then
-            echo "Node installed: $(node --version)"
-            echo "Upgrade to Node 22..."
-            nvm install 22
-          else
-            echo "Installing Node 22..."
-            nvm install 22
-          fi
-              
-          nvm use 22
-          echo "NPM version: $(npm --version)"
-          echo "Node version: $(node --version)"
+            if command -v node &> /dev/null; then
+              echo "Node installed: $(node --version)"
+              echo "Upgrade to Node 22..."
+              nvm install 22
+            else
+              echo "Installing Node 22..."
+              nvm install 22
+            fi
+                
+            nvm use 22
+            echo "NPM version: $(npm --version)"
+            echo "Node version: $(node --version)"
           '
           rm -f private-key
 
@@ -116,17 +131,32 @@ jobs:
 
   prepare-environment:
     runs-on: ubuntu-24.04
-    needs: [install]
+    needs: [deploy, install]
     name: Prepare environment
 
     steps:
-      - name: Install Node dependencies
+      - name: Setup environment and build Frontend
         run: |
           echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
           ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
-          cd SavannaSync/frontend
-          npm install
-          echo "Frontend dependencies installed successfully"
+            cd SavannaSync/frontend
+            
+            # Copy .env.example to .env (without modifications)
+            if [ -f .env.example ]; then
+              cp .env.example .env
+              echo "Environment file created from .env.example"
+            else
+              echo "Warning: .env.example not found"
+            fi
+            
+            # Load NVM and build the frontend for production
+            \. "$HOME/.nvm/nvm.sh"
+            nvm use 22
+            echo "Building frontend packages..."
+            npm cache clean --force
+            npm install
+            npm run build
+            echo "Frontend built successfully"
           '
           rm -f private-key
 
@@ -134,9 +164,137 @@ jobs:
         run: |
           echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
           ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
-          cd SavannaSync/backend/syncsenta-ai-service
-          mvn clean compile
-          echo "Backend built successfully"
+            cd SavannaSync/backend/syncsenta-ai-service
+            echo "Building backend with Maven..."
+            mvn clean package -DskipTests
+            echo "Backend built successfully"
           '
           rm -f private-key
-      
+
+      - name: Copy backend JAR to deployment location
+        run: |
+          echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
+          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
+            # Create deployment directory
+            sudo mkdir -p /opt/syncsenta
+            
+            # Copy JAR file
+            cd SavannaSync/backend/syncsenta-ai-service
+            sudo cp target/syncsenta-ai-service-*.jar /opt/syncsenta/syncsenta-ai-service-1.0.0.jar
+            
+            # Set ownership
+            sudo chown -R $USER:$USER /opt/syncsenta
+            
+            echo "Backend JAR copied to deployment location"
+          '
+          rm -f private-key
+
+      - name: Run deployment configuration script
+        run: |
+          echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
+          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
+            cd SavannaSync
+            # Make deployment script executable
+            chmod +x deploy-cloud.sh
+            
+            # Run deployment configuration
+            ./deploy-cloud.sh ${SERVER_IP}
+            
+            echo "Deployment configuration completed"
+          '
+          rm -f private-key
+
+  start-application:
+    runs-on: ubuntu-24.04
+    needs: [prepare-environment]
+    name: Start Application Services
+
+    steps:
+      - name: Start and verify services
+        run: |
+          echo "$PRIVATE_KEY" > private-key && chmod 600 private-key
+          ssh -o StrictHostKeyChecking=no -i private-key ${SERVER_USERNAME}@${SERVER_IP} '
+            echo "Starting application services..."
+            
+            # Start Java backend service
+            sudo systemctl start syncsenta-backend
+            sleep 5
+            
+            # Check if Java service is running
+            if sudo systemctl is-active --quiet syncsenta-backend; then
+              echo "Java backend service started successfully"
+              echo "Backend status: $(sudo systemctl status syncsenta-backend --no-pager -l)"
+            else
+              echo "Java backend service failed to start"
+              echo "Checking logs..."
+              sudo journalctl -u syncsenta-backend --no-pager -n 30
+              echo "Service status:"
+              sudo systemctl status syncsenta-backend --no-pager -l
+            fi
+            
+            # Start NGINX
+            sudo systemctl restart nginx
+            
+            # Check if NGINX is running
+            if sudo systemctl is-active --quiet nginx; then
+              echo "NGINX started successfully"
+            else
+              echo "NGINX failed to start"
+              sudo nginx -t
+            fi
+            
+            # Test application accessibility
+            echo "Testing application accessibility..."
+            sleep 3
+            
+            # Test frontend (served by NGINX)
+            echo "Testing frontend..."
+            if curl -s -o /dev/null -w "%{http_code}" http://localhost | grep -q "200"; then
+              echo "Frontend is accessible via NGINX"
+            else
+              echo "Frontend accessibility check failed"
+              echo "NGINX status: $(sudo systemctl is-active nginx)"
+              echo "NGINX error logs:"
+              sudo tail -n 10 /var/log/nginx/error.log
+            fi
+            
+            # Test backend health endpoints
+            echo "Testing backend health endpoints..."
+            
+            # Test Spring Boot Actuator health endpoint
+            if curl -s -o /dev/null -w "%{http_code}" http://localhost:8081/actuator/health 2>/dev/null | grep -q "200"; then
+              echo "Backend actuator health check passed"
+            else
+              echo "Backend actuator health endpoint not available"
+            fi
+            
+            # Test custom tutor health endpoint
+            if curl -s -o /dev/null -w "%{http_code}" http://localhost:8081/api/tutor/health 2>/dev/null | grep -q "200"; then
+              echo "Tutor service health check passed"
+            else
+              echo "Tutor service health endpoint not available"
+            fi
+            
+            # Test analysis service health endpoint
+            if curl -s -o /dev/null -w "%{http_code}" http://localhost:8081/api/analysis/health 2>/dev/null | grep -q "200"; then
+              echo "Analysis service health check passed"
+            else
+              echo "Analysis service health endpoint not available"
+            fi
+            
+            # Test if backend is responding on port 8081
+            if curl -s -o /dev/null -w "%{http_code}" http://localhost:8081/ 2>/dev/null | grep -q -E "200|404|403"; then
+              echo "Backend is responding on port 8081"
+            else
+              echo "Backend is not responding on port 8081"
+              echo "Checking if port 8081 is listening:"
+              sudo netstat -tlnp | grep :8081 || echo "Port 8081 not listening"
+            fi
+            
+            echo ""
+            echo "Application startup completed!"
+            echo "Access your application at: http://${SERVER_IP}"
+          '
+          rm -f private-key
+
+  

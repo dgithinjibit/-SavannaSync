@@ -51,12 +51,6 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
 
-        <!-- HTTP Client -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webflux</artifactId>
-        </dependency>
-
         <!-- Hedera SDK (for potential future blockchain integration) -->
         <dependency>
             <groupId>com.hedera.hashgraph</groupId>

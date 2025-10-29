@@ -183,14 +183,14 @@ docker run -p 8081:8081 \
   syncsenta-ai-service
 ```
 
-## 🔒 Security Features
+## Security Features
 
 - **CORS Configuration** - Restricts access to authorized frontends
 - **Input Validation** - Jakarta Validation for all request DTOs
 - **Error Handling** - Graceful degradation with fallback responses
 - **Environment Isolation** - Separate configs for dev/prod
 
-## 📊 Monitoring
+## Monitoring
 
 The service includes Spring Boot Actuator for monitoring:
 
@@ -198,7 +198,7 @@ The service includes Spring Boot Actuator for monitoring:
 - **Metrics** - `/actuator/metrics`
 - **Info** - `/actuator/info`
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Run tests
@@ -211,7 +211,7 @@ curl -X POST http://localhost:8081/api/tutor/chat \
   -d '{"message":"Hello Mwalimu!","studentContext":{"gradeLevel":5,"currentSubject":"Math","resourceLevel":"MEDIUM"}}'
 ```
 
-## 🔄 Migration Benefits
+## Migration Benefits
 
 ### From Google Gemini to Hedera Moonscape AI:
 
@@ -221,7 +221,7 @@ curl -X POST http://localhost:8081/api/tutor/chat \
 4. **Blockchain Integration** - Future integration with Hedera consensus services
 5. **Performance** - Distributed AI nodes for faster responses
 
-## 🚀 Production Deployment
+## Production Deployment
 
 ### Environment Variables for Production:
 
@@ -239,7 +239,7 @@ export SERVER_PORT=8081
 - **Caching** - Redis cache for frequently requested analyses
 - **Database** - PostgreSQL for session persistence and analytics
 
-## 📚 Development
+## Development
 
 ### Project Structure
 
